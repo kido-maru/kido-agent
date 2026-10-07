@@ -41,6 +41,19 @@ func TestCheckActionsTruncationWarning(t *testing.T) {
 	}
 }
 
+func TestCheckActionsSameShortName(t *testing.T) {
+	root := t.TempDir()
+	mkAction(t, root, "10_sleep", "a.bat")
+	mkAction(t, root, "20_sleep", "a.bat")
+	mkAction(t, root, "30_lock", "a.bat")
+	var out bytes.Buffer
+	checkActions(&out, root, "windows")
+	s := out.String()
+	if !strings.Contains(s, "10_sleep と 20_sleep は、番号を除くと同じ名前(sleep)") || strings.Contains(s, "30_lock と") {
+		t.Fatal(s)
+	}
+}
+
 func TestCheckPairing(t *testing.T) {
 	var out bytes.Buffer
 	if bad := checkPairing(&out, control.Status{State: auth.StatePaired, Paired: true}, nil, true); bad || !strings.Contains(out.String(), "✓") {

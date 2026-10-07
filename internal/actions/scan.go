@@ -40,6 +40,10 @@ func defaultName(id string) string {
 	return id
 }
 
+// ShortName は ID から並び順の番号を除いた名前。ショートカットなどほかのアプリからは、
+// この名前で操作を呼べる(フォルダを並べ替えて番号が変わっても、そのまま使えるように)。
+func ShortName(id string) string { return defaultName(id) }
+
 // Scan は操作フォルダを読み直す。本体から要求が来るたびに呼ぶので、
 // 利用者がフォルダを足したり直したりしたら、常駐アプリを再起動しなくても反映される。
 func Scan(dir, goos string) ([]Action, error) {

@@ -9,6 +9,7 @@ import (
 
 	"kido-agent/internal/boot"
 	"kido-agent/internal/server"
+	"kido-agent/internal/service"
 )
 
 // version はリリースのビルドで -ldflags -X main.version=... により埋め込む。
@@ -39,6 +40,10 @@ func run(args []string) int {
 	switch cmd {
 	case "serve":
 		return server.Serve(version)
+	case "start":
+		return service.Start(os.Stdout)
+	case "stop":
+		return service.Stop(os.Stdout)
 	case "pair":
 		return cmdPair(os.Stdout)
 	case "check":

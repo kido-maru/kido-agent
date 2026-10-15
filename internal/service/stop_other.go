@@ -1,6 +1,6 @@
 //go:build !windows
 
-package uninstall
+package service
 
 import "io"
 

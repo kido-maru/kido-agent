@@ -71,7 +71,9 @@ func runRole(a *agent) int {
 		}
 		if _, e := control.Call("GET", "/control/status"); e == nil {
 			log.Printf("手足役として動きます(別のプロセスが待ち受けています)")
-			runHelper(a.actionsDir, a.goos)
+			if runHelper(a.actionsDir, a.goos) {
+				return 0
+			}
 			// 待ち受け役が消えた。少し待ってから、自分が待ち受け役になろうとする。
 			time.Sleep(time.Second)
 			continue

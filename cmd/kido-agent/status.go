@@ -9,24 +9,23 @@ import (
 
 	"kido-agent/internal/actions"
 	"kido-agent/internal/auth"
+	"kido-agent/internal/boot"
 	"kido-agent/internal/control"
 	"kido-agent/internal/paths"
 )
 
-func cmdCheck(out io.Writer) int {
+// cmdStatus は、動いているか・組めているか・ログイン前の設定・操作フォルダの中身を
+// まとめて見せる。困ったときに打つコマンド。✗ が 1 つでもあれば 1 を返す。
+func cmdStatus(out io.Writer) int {
 	dir, err := paths.ActionsDir()
 	if err != nil {
 		fmt.Fprintln(out, "✗ ホームフォルダが分かりません:", err)
 		return 1
 	}
 	st, stErr := control.Call("GET", "/control/status")
-	hasKey := false
-	if kp, err := paths.KeyFile(); err == nil {
-		key, _ := auth.LoadKey(kp)
-		hasKey = key != nil
-	}
 	fmt.Fprintf(out, "起動丸エージェント %s\n\n", version)
-	bad := checkPairing(out, st, stErr, hasKey)
+	bad := checkPairing(out, st, stErr, hasKey())
+	printBoot(out)
 	fmt.Fprintln(out)
 	if checkActions(out, dir, runtime.GOOS) {
 		bad = true
@@ -37,7 +36,7 @@ func cmdCheck(out io.Writer) int {
 	return 0
 }
 
-// checkPairing は組めているかを見せる。常駐アプリが動いていればその答えを、
+// checkPairing は動いているかと、組めているかを見せる。常駐アプリが動いていればその答えを、
 // 動いていなければ鍵のファイルの有無を手がかりにする。
 func checkPairing(out io.Writer, st control.Status, stErr error, hasKey bool) (bad bool) {
 	if stErr != nil {
@@ -47,6 +46,12 @@ func checkPairing(out io.Writer, st control.Status, stErr error, hasKey bool) (b
 		}
 		return true
 	}
+	if st.Version != "" && st.Version != version {
+		// 入れ直しても、前の版が動き続けていることがある
+		fmt.Fprintf(out, "✓ 動いています(動いているのは %s。新しい版にするには kido-agent stop → start)\n", st.Version)
+	} else {
+		fmt.Fprintln(out, "✓ 動いています")
+	}
 	switch st.State {
 	case auth.StatePaired:
 		fmt.Fprintln(out, "✓ 起動丸の本体と組めています")
@@ -54,10 +59,22 @@ func checkPairing(out io.Writer, st control.Status, stErr error, hasKey bool) (b
 		fmt.Fprintf(out, "… 組める時間が開いています(残り %d:%02d)\n", st.Remaining/60, st.Remaining%60)
 	default:
 		fmt.Fprintln(out, "✗ まだ起動丸の本体と組んでいません")
-		fmt.Fprintln(out, "    → kido-agent pair を実行して、スマホの起動ページでこの PC を登録してください")
+		fmt.Fprintln(out, "    → kido-agent setup を実行して、スマホの起動ページでこの PC を登録してください")
 		return true
 	}
 	return false
+}
+
+// printBoot はログイン前(電源を入れただけ)でも動く設定かを見せる。Mac は非対応なので出さない。
+func printBoot(out io.Writer) {
+	if !boot.Supported {
+		return
+	}
+	if boot.Enabled() {
+		fmt.Fprintln(out, "ログイン前(電源を入れただけ)でも使えます")
+	} else {
+		fmt.Fprintln(out, "ログインしているときだけ使えます(変えるには kido-agent setup)")
+	}
 }
 
 // checkActions は操作フォルダを 1 つずつ確かめる。✗ が 1 つでもあれば true を返す。
@@ -65,7 +82,7 @@ func checkActions(out io.Writer, dir, goos string) (bad bool) {
 	fmt.Fprintln(out, "操作フォルダ:", dir)
 	list, err := actions.Scan(dir, goos)
 	if errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintln(out, "✗ 操作フォルダがありません → kido-agent open で作れます")
+		fmt.Fprintln(out, "✗ 操作フォルダがありません → kido-agent stop のあと kido-agent start で作り直されます")
 		return true
 	} else if err != nil {
 		fmt.Fprintln(out, "✗ 操作フォルダを読めません:", err)

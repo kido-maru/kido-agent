@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// PairWindow は kido-agent pair で開く「組める時間」の長さ。
+// PairWindow は kido-agent setup で開く「組める時間」の長さ。
 const PairWindow = 10 * time.Minute
 
 // 状態の名前は本体との取り決め(PROTOCOL.md)どおり。

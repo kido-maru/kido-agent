@@ -73,7 +73,14 @@ else
 	grep -q '手足役: 実行しました' /tmp/kido-helper.log && fail "ログイン中なのに手足役に流した"
 fi
 kill "$helper" 2>/dev/null || true
-"$bin" check || fail "check が失敗した"
+"$bin" status || fail "status が失敗した"
+
+# stop は OS の見張り(launchd の KeepAlive・systemd)に起こし直されずに止まり、start で戻る
+"$bin" stop || fail "stop が失敗した"
+sleep 3
+curl -fsS -m 2 http://127.0.0.1:47821/v1/hello >/dev/null 2>&1 && fail "stop の後も動いている"
+"$bin" start || fail "start が失敗した"
+python3 ci/hub_stub.py list >/dev/null || fail "start の後に本体から届かない"
 
 # 更新(入れ直し)では組み直さない
 KIDO_AGENT_TARBALL=$tarball sh install/install.sh </dev/null

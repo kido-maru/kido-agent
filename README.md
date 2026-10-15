@@ -29,8 +29,10 @@ curl -fsSL https://pc.kido.page/install.sh | sh
    - Mac: `~/.local/bin/kido-agent` と LaunchAgent(`page.kido.agent`)。再起動・シャットダウン用に `/sbin/shutdown` だけをパスワードなしで許す設定(`/etc/sudoers.d/kido-agent`)を入れるか聞く
    - Linux: `~/.local/bin/kido-agent` と `systemd --user` の `kido-agent.service`
 2. ファイアウォールの確認(Windows は「Windows セキュリティ」)が出たら「許可」を押す
-3. `kido-agent pair` が動き、起動丸の本体が見つけに来るのを 10 分のあいだ待つ。起動ページにこの PC をまだ登録していなければ、そのあいだにスマホで登録する
-4. 操作フォルダ `~/KidoButtons` を開く
+3. `kido-agent setup` が動き、起動丸の本体が見つけに来るのを 10 分のあいだ待つ。起動ページにこの PC をまだ登録していなければ、そのあいだにスマホで登録する
+   (入れ直しで、もう組めているときは組み直すか聞く。既定はいいえ)
+4. 組めたら操作フォルダ `~/KidoButtons` を開く
+5. Windows・Linux では、ログイン前(電源を入れただけ)でも使うか聞く(初めてなら既定は「はい」)
 
 ### 手元のビルドから入れる
 
@@ -84,15 +86,16 @@ confirm = "本当に起動しますか?"
 run = "start.bat"
 ```
 
-知らないキーは `kido-agent check` で警告します(動作は止めません)。
+知らないキーは `kido-agent status` で警告します(動作は止めません)。
 実行できるファイルが無い・2 つ以上ある・`kido.toml` が読めないときは、スマホに押せない操作として出ます。
 
 ## ログイン前(電源を入れただけ)でも使う
 
-`kido-agent boot on` にすると、サインインしていなくても操作を受け取れるようになります
+`kido-agent setup` の「ログイン前(電源を入れただけ)でも使いますか?」に「はい」と答えると、
+サインインしていなくても操作を受け取れるようになります
 (電源を入れてゲームのサーバーを立ち上げる、スリープ・再起動・シャットダウンなど)。
-`kido-agent boot off` で元に戻します。引数なしの `kido-agent boot` で今の状態が分かります。
-インストールの最後にも尋ねます。
+インストールの最後にも聞きます。元に戻すときも `kido-agent setup` で「いいえ」と答えます。
+今の状態は `kido-agent status` で分かります。
 
 - Windows: 起動時に動くタスクを登録します(登録には管理者の確認 UAC が出ます)。
   サインイン中はこれまでどおり、ログイン中の画面・窓で操作が動きます
@@ -104,19 +107,22 @@ run = "start.bat"
 そのまま動きますが、**窓のあるアプリは見えないところで起動します**。窓が要る操作は
 `kido.toml` に `require_login = true` を書くと、ログインしているときだけ押せるようになります
 (ログイン前はスマホで「ログインが必要」と出ます)。同梱の画面ロックはこの設定です。
-ショートカットやアプリなのに `require_login` が無い操作は、`kido-agent check` が知らせます。
+ショートカットやアプリなのに `require_login` が無い操作は、`kido-agent status` が知らせます。
 
 ## コマンド
 
 | コマンド | 内容 |
 |---|---|
-| `kido-agent serve` | 常駐する(普段は自動で起動するので打たない) |
-| `kido-agent pair` | 本体と組む。10 分だけ受け付ける。組み直すと古い組み合わせは使えなくなる |
-| `kido-agent check` | 操作フォルダを確かめ、✓ / ✗(押せない。理由と直し方)/ !(警告)で表示する。組めているかも出す |
-| `kido-agent open` | 操作フォルダを開く |
-| `kido-agent boot` | ログイン前(電源を入れただけ)でも使えるようにする(`on`/`off`、引数なしで状態) |
+| `kido-agent` | 版と、動いているか・組めているかを出し、コマンドの一覧を出す |
+| `kido-agent setup` | 本体と組み(10 分だけ受け付ける)、ログイン前にも使うかを選ぶ。組めていれば組み直すか聞く(組み直すと古い組み合わせは使えなくなる) |
+| `kido-agent status` | 動いているか・組めているか・ログイン前の設定と、操作フォルダを ✓ / ✗(押せない。理由と直し方)/ !(警告)で表示する |
+| `kido-agent start` | 常駐アプリを起こす |
+| `kido-agent stop` | 常駐アプリを止める。自動起動は残すので、次のログイン(か `start`)でまた動く |
 | `kido-agent uninstall` | 取り除く。`~/KidoButtons` は残す |
-| `kido-agent version` | 版を出す |
+
+一覧に出さないもの: `serve`(常駐する。自動起動が使う)、`--version`(版だけを出す。インストールの台本が使う)。
+`setup` は入力が無ければ何も変えずに進む(組み直さない・ログイン前の設定はそのまま)。
+環境変数 `KIDO_AGENT_BOOT=on|off|skip`・`KIDO_AGENT_REPAIR=yes|no` で答えを渡せる(自動化・CI 向け)。
 
 鍵とログの置き場: どの OS も `~/.kido-agent/`(Windows では隠しフォルダ)(ログは `kido-agent.log`、1MB で 1 世代回す)。
 
@@ -126,13 +132,15 @@ run = "start.bat"
 
 | 場所 | 中身 |
 |---|---|
-| `cmd/kido-agent/` | 入口とコマンド(pair・check・open・uninstall) |
+| `cmd/kido-agent/` | 入口とコマンド(setup・status・uninstall) |
 | `internal/auth/` | 鍵・nonce・署名と、組める時間 |
 | `internal/actions/` | 操作フォルダを読む・kido.toml・上限・一覧の本文 |
 | `internal/server/` | 本体からの要求と CLI からの要求を受ける常駐の本体 |
 | `internal/control/` | CLI から常駐アプリへの問い合わせ |
 | `internal/launch/` | OS ごとの実行のしかた |
 | `internal/defaults/` | 同梱の操作(`data/<os>/`)と書き出し |
+| `internal/service/` | OS ごとの起こす・止める(start・stop) |
+| `internal/boot/` | ログイン前でも動かす設定 |
 | `internal/uninstall/` | OS ごとの片付け |
 | `internal/paths/` `internal/logfile/` | 置き場所とログ |
 | `install/` | インストールの手順(`install.ps1` `install.sh`) |
@@ -154,7 +162,7 @@ pwsh ci/package-windows.ps1 -Version dev -Arch amd64 -Out dist
 - 動いている常駐アプリの隣で試すときは、待ち受けを `KIDO_AGENT_API_ADDR` `KIDO_AGENT_CONTROL_ADDR`、鍵とログの置き場を `KIDO_AGENT_CONFIG_DIR` で変えられる
 - `ci/hub_stub.py` は本体の代わりをする試験用の道具。`pair` `list` `run <id>` を送る
 - CI(`.github/workflows/ci.yml`)は 3 つの OS でテストし、Windows・Mac・Linux ではインストールから取り除くまでを実物で通す
-- 同梱の操作を入れ直したい(新しい同梱の操作を試したい)ときは、`~/KidoButtons` を消してから `kido-agent serve` を起動する。
+- 同梱の操作を入れ直したい(新しい同梱の操作を試したい)ときは、`~/KidoButtons` を消してから `kido-agent stop` → `kido-agent start` する。
   同梱の操作は `~/KidoButtons` そのものが無いときだけ書き出すので、あるうちは何度起動しても変わらない
 
 ### リリース

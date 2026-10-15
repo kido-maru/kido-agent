@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -18,27 +19,30 @@ import (
 // 仕事が来たら、ログイン中のこの画面で今までどおりに動かして、結果を返す。
 // 待ち受け役に届かない状態が続いたら(たぶん消えた)戻る。呼び出し側が
 // 自分を待ち受け役にしようとする。dir は自分の操作フォルダで、動かすものはここから引く。
-func runHelper(dir, goos string) {
+// Ctrl+C などで止められたときは true を返す。呼び出し側は役を取り直さずに終わる
+// (取り直すと、手で打った serve が Ctrl+C で止まらなくなる)。
+func runHelper(dir, goos string) (stopped bool) {
 	log.Printf("手足役: ログイン中の画面で操作を動かします")
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 	fails := 0
 	for {
-		select {
-		case s := <-stop:
-			log.Printf("手足役を止めます(%v)", s)
-			return
-		default:
-		}
 		// pollHold(待ち受け役側 30 秒)より長めに待つ。空応答はすぐ返る。
-		data, err := control.Do("GET", "/control/helper/next", nil, 40*time.Second)
+		data, err := control.DoContext(ctx, "GET", "/control/helper/next", nil, 40*time.Second)
+		if ctx.Err() != nil {
+			log.Printf("手足役を止めます")
+			return true
+		}
 		if err != nil {
 			fails++
 			if fails > 15 { // 30 秒ほど届かなければ、待ち受け役は消えたとみなす
 				log.Printf("待ち受け役に届きません。役を取り直します")
-				return
+				return false
 			}
-			time.Sleep(2 * time.Second)
+			select {
+			case <-ctx.Done():
+			case <-time.After(2 * time.Second):
+			}
 			continue
 		}
 		fails = 0

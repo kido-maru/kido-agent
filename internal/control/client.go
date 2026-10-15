@@ -4,6 +4,7 @@ package control
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,11 +35,17 @@ var ErrNotRunning = errors.New("常駐アプリが動いていません")
 // Do は合言葉を添えて待ち受け役へ要求を送り、応答の本文を返す。
 // timeout はロングポーリング(手足役)のために呼び出し側が決める。
 func Do(method, path string, body []byte, timeout time.Duration) ([]byte, error) {
+	return DoContext(context.Background(), method, path, body, timeout)
+}
+
+// DoContext は Do の途中で打ち切れる版。手足役のロングポーリングを Ctrl+C で
+// すぐ切るため(切らないと最長 40 秒待たされる)。
+func DoContext(ctx context.Context, method, path string, body []byte, timeout time.Duration) ([]byte, error) {
 	var r io.Reader
 	if body != nil {
 		r = bytes.NewReader(body)
 	}
-	req, err := http.NewRequest(method, "http://"+paths.ControlAddr+path, r)
+	req, err := http.NewRequestWithContext(ctx, method, "http://"+paths.ControlAddr+path, r)
 	if err != nil {
 		return nil, err
 	}

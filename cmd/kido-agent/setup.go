@@ -36,7 +36,9 @@ func cmdSetup(out io.Writer, in io.Reader) int {
 			return code
 		}
 		// 組めたばかりなら、次にすること(操作を置く)の場所を見せる。
-		openFolder(out)
+		if openFolder(out) == 0 {
+			fmt.Fprintln(out, "ここにフォルダを作ってスクリプトやショートカットを入れると、スマホに操作が増えます。")
+		}
 	}
 	return setupBoot(out, r)
 }

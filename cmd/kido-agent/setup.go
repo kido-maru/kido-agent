@@ -15,7 +15,8 @@ import (
 
 // cmdSetup は最初に要ることをまとめて行う: 本体と組む・ログイン前にも使うかを選ぶ。
 // 何度打ってもよい。組めていれば組み直すか聞き(既定は組み直さない)、ログイン前の
-// 設定は今の状態を既定にして聞く。答えを読めない(台本・CI)ときは既定のまま進む。
+// 設定は初めて組んだときは「はい」、それ以外は今の状態を既定にして聞く。
+// 答えを読めない(台本・CI)ときは何も変えずに進む。
 func cmdSetup(out io.Writer, in io.Reader) int {
 	r := bufio.NewReader(in)
 	st, err := control.Call("GET", "/control/status")
@@ -23,10 +24,11 @@ func cmdSetup(out io.Writer, in io.Reader) int {
 		reportControlError(out, err)
 		return 1
 	}
+	first := !st.Paired
 	if st.Paired {
 		fmt.Fprintln(out, "✓ 起動丸の本体とはもう組めています。")
 		// 組み直すと古い鍵が消え、組み終わるまで本体から使えなくなるので、既定は「いいえ」。
-		if ask(out, r, "組み直しますか?", false, os.Getenv("KIDO_AGENT_REPAIR")) {
+		if ask(out, r, "組み直しますか?", false, false, os.Getenv("KIDO_AGENT_REPAIR")) {
 			if code := cmdPair(out); code != 0 {
 				return code
 			}
@@ -40,17 +42,19 @@ func cmdSetup(out io.Writer, in io.Reader) int {
 			fmt.Fprintln(out, "ここにフォルダを作ってスクリプトやショートカットを入れると、スマホに操作が増えます。")
 		}
 	}
-	return setupBoot(out, r)
+	return setupBoot(out, r, first)
 }
 
-// setupBoot はログイン前(電源を入れただけ)でも使うかを、今の状態を既定にして聞く。
-func setupBoot(out io.Writer, r *bufio.Reader) int {
+// setupBoot はログイン前(電源を入れただけ)でも使うかを聞く。電源を入れた直後に
+// 使えるのがこの機能の本来の価値なので、初めて組んだときの既定は「はい」。
+// 打ち直したときは今の状態を既定にし、Enter だけで切り替わらないようにする。
+func setupBoot(out io.Writer, r *bufio.Reader, first bool) int {
 	if !boot.Supported {
 		return 0
 	}
 	fmt.Fprintln(out)
 	cur := boot.Enabled()
-	want := ask(out, r, "ログイン前(電源を入れただけ)でも使いますか?", cur, os.Getenv("KIDO_AGENT_BOOT"))
+	want := ask(out, r, "ログイン前(電源を入れただけ)でも使いますか?", cur || first, cur, os.Getenv("KIDO_AGENT_BOOT"))
 	switch {
 	case want == cur && cur:
 		fmt.Fprintln(out, "ログイン前でも使えます(そのまま)。")
@@ -64,16 +68,17 @@ func setupBoot(out io.Writer, r *bufio.Reader) int {
 	return 0
 }
 
-// ask は はい/いいえ を聞く。env が on/yes/off/no なら聞かずにそれに従う(skip や空は聞く)。
-// 読めない・空の答えは def。台本から呼ばれて入力が無いとき(EOF)も def で進む。
-func ask(out io.Writer, r *bufio.Reader, q string, def bool, env string) bool {
+// ask は はい/いいえ を聞く。Enter だけなら def。env が on/yes/off/no なら聞かずに
+// それに従い、skip なら聞かずに keep(今のまま)を返す。台本から呼ばれて入力が
+// 無いとき(EOF)も keep にする(人が答えていないのに UAC や linger を動かさない)。
+func ask(out io.Writer, r *bufio.Reader, q string, def, keep bool, env string) bool {
 	switch strings.ToLower(env) {
 	case "on", "yes", "y":
 		return true
 	case "off", "no", "n":
 		return false
 	case "skip":
-		return def
+		return keep
 	}
 	hint := "[y/N]"
 	if def {
@@ -83,6 +88,7 @@ func ask(out io.Writer, r *bufio.Reader, q string, def bool, env string) bool {
 	line, err := r.ReadString('\n')
 	if err != nil && line == "" {
 		fmt.Fprintln(out)
+		return keep
 	}
 	switch strings.ToLower(strings.TrimSpace(line)) {
 	case "y", "yes", "はい":

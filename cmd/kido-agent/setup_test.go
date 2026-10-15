@@ -36,25 +36,24 @@ func TestWaitPairingTimeout(t *testing.T) {
 
 func TestAsk(t *testing.T) {
 	cases := []struct {
-		in, env string
-		def     bool
-		want    bool
-		prompt  bool
+		in, env         string
+		def, keep, want bool
+		prompt          bool
 	}{
-		{"y\n", "", false, true, true},
-		{"n\n", "", true, false, true},
-		{"\n", "", true, true, true},      // 空は既定
-		{"", "", false, false, true},      // 入力が無い(台本から)なら既定
-		{"", "", true, true, true},        //   (ログイン前の設定は今の状態が既定)
-		{"n\n", "on", false, true, false}, // 環境変数があれば聞かない
-		{"y\n", "no", true, false, false},
-		{"", "skip", true, true, false},
+		{"y\n", "", false, false, true, true},
+		{"n\n", "", true, true, false, true},
+		{"\n", "", true, false, true, true},      // Enter だけなら既定
+		{"", "", true, false, false, true},       // 入力が無い(台本から)なら今のまま
+		{"", "", false, true, true, true},        //   (既定ではなく今の状態)
+		{"n\n", "on", false, false, true, false}, // 環境変数があれば聞かない
+		{"y\n", "no", true, true, false, false},
+		{"", "skip", true, false, false, false},
 	}
 	for _, c := range cases {
 		var out bytes.Buffer
-		got := ask(&out, bufio.NewReader(strings.NewReader(c.in)), "Q?", c.def, c.env)
+		got := ask(&out, bufio.NewReader(strings.NewReader(c.in)), "Q?", c.def, c.keep, c.env)
 		if got != c.want || strings.Contains(out.String(), "Q?") != c.prompt {
-			t.Errorf("in=%q env=%q def=%v: got %v, out=%q", c.in, c.env, c.def, got, out.String())
+			t.Errorf("in=%q env=%q def=%v keep=%v: got %v, out=%q", c.in, c.env, c.def, c.keep, got, out.String())
 		}
 	}
 }

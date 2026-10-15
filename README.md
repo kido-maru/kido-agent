@@ -32,7 +32,7 @@ curl -fsSL https://pc.kido.page/install.sh | sh
 3. `kido-agent setup` が動き、起動丸の本体が見つけに来るのを 10 分のあいだ待つ。起動ページにこの PC をまだ登録していなければ、そのあいだにスマホで登録する
    (入れ直しで、もう組めているときは組み直すか聞く。既定はいいえ)
 4. 組めたら操作フォルダ `~/KidoButtons` を開く
-5. Windows・Linux では、ログイン前(電源を入れただけ)でも使うか聞く
+5. Windows・Linux では、ログイン前(電源を入れただけ)でも使うか聞く(初めてなら既定は「はい」)
 
 ### 手元のビルドから入れる
 
@@ -122,7 +122,7 @@ run = "start.bat"
 | `kido-agent uninstall` | 取り除く。`~/KidoButtons` は残す |
 
 一覧に出さないもの: `serve`(常駐する。自動起動が使う)、`--version`(版だけを出す。インストールの台本が使う)。
-`setup` は入力が無ければ既定(組み直さない・ログイン前の設定はそのまま)で進む。
+`setup` は入力が無ければ何も変えずに進む(組み直さない・ログイン前の設定はそのまま)。
 環境変数 `KIDO_AGENT_BOOT=on|off|skip`・`KIDO_AGENT_REPAIR=yes|no` で答えを渡せる(自動化・CI 向け)。
 
 鍵とログの置き場: どの OS も `~/.kido-agent/`(Windows では隠しフォルダ)(ログは `kido-agent.log`、1MB で 1 世代回す)。

@@ -5,7 +5,7 @@ import "strings"
 // CmdUnsafeChars は、引用符で囲んでも cmd に読み違えられる文字。% は引用符の中でも
 // 環境変数として展開され(call でもう一度展開される)、^ は call が引用符の中の分まで
 // 2 つに増やしてしまう。こういうパスの .bat .cmd は wait では動かさず、
-// check で壊れた操作として知らせる(actions)。
+// status で壊れた操作として知らせる(actions)。
 const CmdUnsafeChars = "%^"
 
 // CmdPathProblem は、パスを cmd /c call に正しく渡せないときの理由を返す。渡せれば "" 。

@@ -10,7 +10,7 @@ import (
 	"kido-agent/internal/control"
 )
 
-// controlHandler は同じ PC の CLI(pair・check・uninstall)から使う窓口。
+// controlHandler は同じ PC の CLI(setup・status・stop・uninstall)から使う窓口。
 func (a *agent) controlHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /control/status", func(w http.ResponseWriter, r *http.Request) {

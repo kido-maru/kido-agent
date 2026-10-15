@@ -21,11 +21,13 @@ var scripts embed.FS
 
 const taskName = "KidoAgent"
 
-// enable は起動時タスクを登録する。登録は管理者(UAC)が要るので、昇格した
+const Supported = true
+
+// Enable は起動時タスクを登録する。登録は管理者(UAC)が要るので、昇格した
 // PowerShell に任せる。登録できたら今の常駐を止めてタスクを起こし、ログイン中なら
 // もう一度 kido-agentd を起こして手足役にする(exe の入れ替えではないが、
 // 待ち受け役をタスク側へ移すため)。
-func enable(out io.Writer) int {
+func Enable(out io.Writer) int {
 	exe, err := daemonPath()
 	if err != nil {
 		fmt.Fprintln(out, "✗", err)
@@ -56,7 +58,7 @@ func enable(out io.Writer) int {
 	return 0
 }
 
-func disable(out io.Writer) int {
+func Disable(out io.Writer) int {
 	exe, _ := daemonPath()
 	fmt.Fprintln(out, "ログイン前には動かさないようにします。管理者の確認(UAC)が出たら「はい」を押してください。")
 	if msg, err := runElevated("unregister.ps1"); err != nil {
@@ -74,20 +76,11 @@ func disable(out io.Writer) int {
 	return 0
 }
 
-func status(out io.Writer) int {
+// Enabled は起動時タスクがあるか。
+func Enabled() bool {
 	cmd := exec.Command("schtasks", "/query", "/tn", taskName)
 	cmd.SysProcAttr = hidden()
-	if cmd.Run() == nil {
-		fmt.Fprintln(out, "ログイン前: 動きます(起動時タスク KidoAgent あり)")
-	} else {
-		fmt.Fprintln(out, "ログイン前: 動きません(kido-agent boot on で有効にできます)")
-	}
-	return 0
-}
-
-func usage(out io.Writer) int {
-	fmt.Fprintln(out, "使い方: kido-agent boot [on|off]")
-	return 2
+	return cmd.Run() == nil
 }
 
 func daemonPath() (string, error) {

@@ -153,7 +153,7 @@ path_hint() {
 wait_agent() {
 	i=0
 	while [ $i -lt 50 ]; do
-		status=$(curl -fsS -m 1 -H "X-Kido-Control: $(control_token)" "$CONTROL/status" 2>/dev/null) && return 0
+		curl -fsS -m 1 -H "X-Kido-Control: $(control_token)" "$CONTROL/status" >/dev/null 2>&1 && return 0
 		sleep 0.1 2>/dev/null || sleep 1
 		i=$((i + 1))
 	done

@@ -1,4 +1,4 @@
-package uninstall
+package service
 
 import (
 	"os/exec"

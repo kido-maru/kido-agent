@@ -68,7 +68,5 @@ func reportControlError(out io.Writer, err error) {
 		return
 	}
 	fmt.Fprintln(out, "✗ 起動丸エージェント(常駐アプリ)が動いていません。")
-	fmt.Fprintln(out, "  次のどちらかで起動してから、もう一度試してください。")
-	fmt.Fprintln(out, "  ・PC からサインアウトして、サインインし直す")
-	fmt.Fprintln(out, "  ・"+startHint())
+	fmt.Fprintln(out, "  kido-agent start で起動してから、もう一度試してください。")
 }

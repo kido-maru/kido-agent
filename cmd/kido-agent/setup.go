@@ -1,15 +1,97 @@
 package main
 
 import (
-	"errors"
+	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"time"
 
 	"kido-agent/internal/auth"
+	"kido-agent/internal/boot"
 	"kido-agent/internal/control"
 )
 
+// cmdSetup は最初に要ることをまとめて行う: 本体と組む・ログイン前にも使うかを選ぶ。
+// 何度打ってもよい。組めていれば組み直すか聞き(既定は組み直さない)、ログイン前の
+// 設定は今の状態を既定にして聞く。答えを読めない(台本・CI)ときは既定のまま進む。
+func cmdSetup(out io.Writer, in io.Reader) int {
+	r := bufio.NewReader(in)
+	st, err := control.Call("GET", "/control/status")
+	if err != nil {
+		reportControlError(out, err)
+		return 1
+	}
+	if st.Paired {
+		fmt.Fprintln(out, "✓ 起動丸の本体とはもう組めています。")
+		// 組み直すと古い鍵が消え、組み終わるまで本体から使えなくなるので、既定は「いいえ」。
+		if ask(out, r, "組み直しますか?", false, os.Getenv("KIDO_AGENT_REPAIR")) {
+			if code := cmdPair(out); code != 0 {
+				return code
+			}
+		}
+	} else {
+		if code := cmdPair(out); code != 0 {
+			return code
+		}
+		// 組めたばかりなら、次にすること(操作を置く)の場所を見せる。
+		openFolder(out)
+	}
+	return setupBoot(out, r)
+}
+
+// setupBoot はログイン前(電源を入れただけ)でも使うかを、今の状態を既定にして聞く。
+func setupBoot(out io.Writer, r *bufio.Reader) int {
+	if !boot.Supported {
+		return 0
+	}
+	fmt.Fprintln(out)
+	cur := boot.Enabled()
+	want := ask(out, r, "ログイン前(電源を入れただけ)でも使いますか?", cur, os.Getenv("KIDO_AGENT_BOOT"))
+	switch {
+	case want == cur && cur:
+		fmt.Fprintln(out, "ログイン前でも使えます(そのまま)。")
+	case want == cur:
+		fmt.Fprintln(out, "ログインしているときだけ使います(そのまま)。")
+	case want:
+		return boot.Enable(out)
+	default:
+		return boot.Disable(out)
+	}
+	return 0
+}
+
+// ask は はい/いいえ を聞く。env が on/yes/off/no なら聞かずにそれに従う(skip や空は聞く)。
+// 読めない・空の答えは def。台本から呼ばれて入力が無いとき(EOF)も def で進む。
+func ask(out io.Writer, r *bufio.Reader, q string, def bool, env string) bool {
+	switch strings.ToLower(env) {
+	case "on", "yes", "y":
+		return true
+	case "off", "no", "n":
+		return false
+	case "skip":
+		return def
+	}
+	hint := "[y/N]"
+	if def {
+		hint = "[Y/n]"
+	}
+	fmt.Fprintf(out, "%s %s ", q, hint)
+	line, err := r.ReadString('\n')
+	if err != nil && line == "" {
+		fmt.Fprintln(out)
+	}
+	switch strings.ToLower(strings.TrimSpace(line)) {
+	case "y", "yes", "はい":
+		return true
+	case "n", "no", "いいえ":
+		return false
+	}
+	return def
+}
+
+// cmdPair は組める時間を開いて、本体が見つけに来るまで待つ。
 func cmdPair(out io.Writer) int {
 	st, err := control.Call("POST", "/control/pair")
 	if err != nil {
@@ -47,26 +129,4 @@ func waitPairing(out io.Writer, st control.Status, get func() (control.Status, e
 			return 1
 		}
 	}
-}
-
-func printPairTimeout(out io.Writer) {
-	fmt.Fprintln(out, "✗ 10 分のあいだに本体から届きませんでした。次を確かめてください。")
-	fmt.Fprintln(out, "  ・スマホの起動ページで、この PC を登録したか")
-	fmt.Fprintln(out, "  ・ファイアウォールの確認で「許可」を押したか")
-	if hint := firewallHint(); hint != "" {
-		fmt.Fprintln(out, "    "+hint)
-	}
-	fmt.Fprintln(out, "  ・起動丸の本体の電源が入っていて、この PC と同じネットワークにいるか")
-	fmt.Fprintln(out, "もう一度組むには、次を実行してください:")
-	fmt.Fprintln(out, "  kido-agent pair")
-}
-
-// reportControlError は常駐アプリに届かなかったときの案内を出す。
-func reportControlError(out io.Writer, err error) {
-	if !errors.Is(err, control.ErrNotRunning) {
-		fmt.Fprintln(out, "✗", err)
-		return
-	}
-	fmt.Fprintln(out, "✗ 起動丸エージェント(常駐アプリ)が動いていません。")
-	fmt.Fprintln(out, "  kido-agent start で起動してから、もう一度試してください。")
 }

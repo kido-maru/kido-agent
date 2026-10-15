@@ -10,7 +10,8 @@ import (
 	"kido-agent/internal/paths"
 )
 
-func cmdOpen(out io.Writer) int {
+// openFolder は操作フォルダを開く。組めたばかりのとき setup から呼ぶ。
+func openFolder(out io.Writer) int {
 	dir, err := paths.ActionsDir()
 	if err != nil {
 		fmt.Fprintln(out, "✗ ホームフォルダが分かりません:", err)

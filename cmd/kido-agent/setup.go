@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"kido-agent/internal/auth"
 	"kido-agent/internal/boot"
 	"kido-agent/internal/control"
+	"kido-agent/internal/service"
 )
 
 // cmdSetup は最初に要ることをまとめて行う: 本体と組む・ログイン前にも使うかを選ぶ。
@@ -20,6 +22,14 @@ import (
 func cmdSetup(out io.Writer, in io.Reader) int {
 	r := bufio.NewReader(in)
 	st, err := control.Call("GET", "/control/status")
+	if errors.Is(err, control.ErrNotRunning) {
+		// 組むにも常駐アプリが要る。止めたまま忘れていることがあるので、ここで起こす。
+		fmt.Fprintln(out, "常駐アプリが止まっているので起動します。")
+		if service.Start(out) != 0 {
+			return 1
+		}
+		st, err = control.Call("GET", "/control/status")
+	}
 	if err != nil {
 		reportControlError(out, err)
 		return 1

@@ -3,11 +3,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"kido-agent/internal/boot"
+	"kido-agent/internal/auth"
+	"kido-agent/internal/control"
+	"kido-agent/internal/paths"
 	"kido-agent/internal/server"
 	"kido-agent/internal/service"
 )
@@ -15,17 +18,14 @@ import (
 // version はリリースのビルドで -ldflags -X main.version=... により埋め込む。
 var version = "dev"
 
-const usage = `起動丸エージェント
+const usage = `使い方: kido-agent <コマンド>
 
-使い方: kido-agent <コマンド>
-
-  serve      常駐する(普段はログイン時に自動で起動します)
-  pair       起動丸の本体と組む(10 分間だけ受け付けます)
-  check      操作フォルダの中身と、組めているかを確かめる
+  setup      起動丸の本体と組み、ログイン前(電源を入れただけ)にも使うかを選ぶ
+  status     動いているか・組めているか・操作フォルダ(~/KidoButtons)の中身を確かめる
+  start      常駐アプリを起こす
+  stop       常駐アプリを止める(次のログインでまた動きます)
   open       操作フォルダ(~/KidoButtons)を開く
-  boot       ログイン前(電源を入れただけ)でも使えるようにする(on/off で切り替え)
   uninstall  このアプリを取り除く(~/KidoButtons は残します)
-  version    版を表示する
 `
 
 func main() {
@@ -38,30 +38,28 @@ func run(args []string) int {
 		cmd = args[1]
 	}
 	switch cmd {
-	case "serve":
+	case "serve": // 自動起動(launchd・systemd・起動時タスク)が使う。人は打たない
 		return server.Serve(version)
+	case "setup":
+		return cmdSetup(os.Stdout, os.Stdin)
+	case "status":
+		return cmdStatus(os.Stdout)
 	case "start":
 		return service.Start(os.Stdout)
 	case "stop":
 		return service.Stop(os.Stdout)
-	case "pair":
-		return cmdPair(os.Stdout)
-	case "check":
-		return cmdCheck(os.Stdout)
 	case "open":
-		return cmdOpen(os.Stdout)
-	case "boot":
-		arg := ""
-		if len(args) > 2 {
-			arg = args[2]
-		}
-		return boot.Run(os.Stdout, arg)
+		return openFolder(os.Stdout)
 	case "uninstall":
 		return cmdUninstall(os.Stdout)
-	case "version", "--version", "-v":
+	case "--version": // インストールの台本が版を読む
 		fmt.Println("kido-agent", version)
 		return 0
-	case "", "help", "--help", "-h":
+	case "":
+		cmdSummary(os.Stdout)
+		fmt.Print(usage)
+		return 0
+	case "help", "--help", "-h":
 		fmt.Print(usage)
 		return 0
 	}
@@ -78,4 +76,21 @@ func defaultCommand(argv0 string) string {
 		return "serve"
 	}
 	return ""
+}
+
+// cmdSummary は引数なしで打たれたときに、版と今の様子を短く見せる。
+func cmdSummary(out io.Writer) {
+	st, stErr := control.Call("GET", "/control/status")
+	fmt.Fprintf(out, "起動丸エージェント %s\n\n", version)
+	checkPairing(out, st, stErr, hasKey())
+	fmt.Fprintln(out)
+}
+
+func hasKey() bool {
+	kp, err := paths.KeyFile()
+	if err != nil {
+		return false
+	}
+	key, _ := auth.LoadKey(kp)
+	return key != nil
 }

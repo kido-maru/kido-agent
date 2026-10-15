@@ -174,43 +174,22 @@ main() {
 	fi
 	stop_manual
 	place
-	say "入れました($("$BIN" version)): $BIN"
+	say "入れました($("$BIN" --version)): $BIN"
 	[ "$os" = darwin ] && say "「受け入れる接続を許可しますか」と聞かれたら「許可」を押してください。"
 	"autostart_$os"
 	wait_agent || die "常駐アプリが起動しませんでした。ログ: $HOME/.kido-agent/kido-agent.log"
 	[ "$os" = darwin ] && sudoers_darwin
 	say ""
-	# 更新で入れ直したときは組み直さない(pair は古い鍵を消してしまう)。
-	case "$status" in
-	*'"paired":true'*) say "起動丸の本体とはもう組めています。組み直すときは: kido-agent pair" ;;
-	*) "$BIN" pair || true ;;
-	esac
-	"$BIN" open >/dev/null 2>&1 || true
+	# 組む・ログイン前にも使うかを選ぶ。組めていれば組み直すかを聞く(既定はいいえ)ので、
+	# 更新で入れ直しても鍵は消えない。curl | sh では標準入力がこの台本なので、端末から読ませる。
+	if (exec </dev/tty) 2>/dev/null; then
+		"$BIN" setup </dev/tty || true
+	else
+		"$BIN" setup </dev/null || true
+	fi
 	say ""
-	say "操作フォルダ(~/KidoButtons)を開きました。スクリプトやアプリを入れたフォルダを作ると、スマホに操作が増えます。"
 	path_hint
-	offer_boot
-	say "困ったときは: kido-agent check"
-}
-
-# offer_boot は、ログイン前(電源を入れただけ)でも使うか尋ねる。
-# Linux だけ(Mac は FileVault のため非対応)。すでに設定済みなら尋ねない。
-offer_boot() {
-	[ "$os" = linux ] || return 0
-	if "$BIN" boot status 2>/dev/null | grep -q "動きます"; then
-		say "ログイン前(電源を入れただけ)でも使えます(設定済み)。"
-		return 0
-	fi
-	if ! (exec </dev/tty) 2>/dev/null; then
-		say "ログイン前でも使うには: kido-agent boot on"
-		return 0
-	fi
-	printf "ログイン前(電源を入れただけ)でも使えるようにしますか? [Y/n] "
-	read -r ans </dev/tty || ans=y
-	case "$ans" in
-	[nN]*) say "あとから設定できます: kido-agent boot on" ;;
-	*) "$BIN" boot on || true ;;
-	esac
+	say "困ったときは: kido-agent status"
 }
 
 main "$@"

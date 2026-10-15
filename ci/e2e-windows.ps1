@@ -45,7 +45,7 @@ try {
     # 待ち受け役がログイン中の画面(セッション 0 以外)で動いていれば、それだけで
     # ログイン中とみなし、require_login の操作も自分で動かす。CI のランナーは画面の
     # あるセッションで動くことがあるので、どちらでも筋が通るかを見る。
-    # セッション 0 の待ち受け役(起動時タスク)は後の boot on の所で確かめる。
+    # セッション 0 の待ち受け役(起動時タスク)は後のログイン前対応(setup)の所で確かめる。
     $lsess = @(Get-CimInstance Win32_Process -Filter "Name='kido-agentd.exe'" | ForEach-Object { $_.SessionId })
     Write-Host ("待ち受け役のセッション: " + ($lsess -join ', '))
     (python ci/hub_stub.py hello) | Tee-Object -Variable helloOut | Write-Host
@@ -102,8 +102,16 @@ try {
     (python ci/hub_stub.py run 93_wait) | Tee-Object -Variable waitOut | Write-Host
     Assert ($waitOut -match '"code":3') 'wait の操作が終了コードを返さない(手足役経由)'
 
-    & "$dest\kido-agent.exe" check
-    Assert ($LASTEXITCODE -eq 0) 'check が失敗した'
+    & "$dest\kido-agent.exe" status
+    Assert ($LASTEXITCODE -eq 0) 'status が失敗した'
+
+    Write-Host '== stop / start'
+    & "$dest\kido-agent.exe" stop
+    Assert ($LASTEXITCODE -eq 0) 'stop が失敗した'
+    Assert (-not (Get-Process kido-agentd -ErrorAction SilentlyContinue)) 'stop の後も kido-agentd が残っている'
+    & "$dest\kido-agent.exe" start
+    Assert ($LASTEXITCODE -eq 0) 'start が失敗した'
+    python ci/hub_stub.py run 92_free; Assert ($LASTEXITCODE -eq 0) 'start の後に操作が動かない'
 
     # このランナーの kido-agentd は昇格して動くので、権限降格の道が通っているはず。
     # 目印付きの子が立ち上がっていること(=無限ループになっていないこと)を確かめる。
@@ -115,16 +123,19 @@ try {
         Write-Host '! この環境では昇格していないため、権限降格の確認は省きます'
     }
 
-    # ログイン前対応(S4U 起動時タスク)。CI ランナーは管理者なので、boot on は
-    # RunAs を挟まず同じプロセスで登録する。実際に登録→起動→権限降格→boot off まで通す。
-    Write-Host '== ログイン前対応(boot on)'
+    # ログイン前対応(S4U 起動時タスク)。CI ランナーは管理者なので、setup は
+    # RunAs を挟まず同じプロセスで登録する。実際に登録→起動→権限降格→外すまで通す。
+    Write-Host '== ログイン前対応(setup)'
     # ここまでの待ち受け役・手足役をいったん止めて、素の状態から試す。
     Get-Process kido-agentd -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep 2
-    & "$dest\kido-agent.exe" boot on 2>&1 | Write-Host
+    # setup は組めていれば組み直すか聞くので、いいえを渡して、ログイン前の設定だけを変える。
+    $env:KIDO_AGENT_REPAIR = 'no'
+    $env:KIDO_AGENT_BOOT = 'on'
+    & "$dest\kido-agent.exe" setup 2>&1 | Write-Host
     Start-Sleep 6
     cmd /c "schtasks /query /tn KidoAgent >nul 2>nul"
-    Assert ($LASTEXITCODE -eq 0) 'boot on で S4U 起動時タスクが登録されなかった'
+    Assert ($LASTEXITCODE -eq 0) 'setup(ログイン前: はい)で S4U 起動時タスクが登録されなかった'
     Write-Host 'S4U タスクの登録を確認'
     # タスクは管理者(High)で起こされ、プロセス側で権限を下げて起動し直す。
     # 起動し直した子が「普通のユーザー」で動いていることをログで確かめる。
@@ -173,11 +184,12 @@ try {
     $hlog = Get-Content -Raw -Encoding UTF8 "$env:USERPROFILE\.kido-agent\kido-agent.log"
     Assert ($hlog -match '手足役: 実行しました 90_bat') '手足役を経ていない(起動時タスク)'
     Write-Host '✓ 起動時タスクの待ち受け役から、手足役を経て動くことを確認'
-    & "$dest\kido-agent.exe" boot off
+    $env:KIDO_AGENT_BOOT = 'off'
+    & "$dest\kido-agent.exe" setup
     Start-Sleep 3
     cmd /c "schtasks /query /tn KidoAgent >nul 2>nul"
-    Assert ($LASTEXITCODE -ne 0) 'boot off で起動時タスクが消えない'
-    Write-Host '✓ ログイン前対応(S4U・権限降格・boot off)を確認'
+    Assert ($LASTEXITCODE -ne 0) 'setup(ログイン前: いいえ)で起動時タスクが消えない'
+    Write-Host '✓ ログイン前対応(S4U・権限降格・外す)を確認'
 
     # 更新(入れ直し)では組み直さない
     Get-Content -Raw -Encoding UTF8 install/install.ps1 | Invoke-Expression

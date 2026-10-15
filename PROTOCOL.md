@@ -24,7 +24,7 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
 | state | 意味 |
 |---|---|
 | `unpaired` | 鍵を持っていない。組める時間も開いていない |
-| `pairing` | 組める時間(`kido-agent pair` から 10 分)が開いている |
+| `pairing` | 組める時間(`kido-agent setup` で組むと決めてから 10 分)が開いている |
 | `paired` | 鍵を持っている |
 
 ## 鍵と署名
@@ -58,7 +58,7 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
   - 200 `{"ok":true}`
 - それ以外は 409 `{"ok":false,"error":"not_pairing"}`
 - 形が違えば 400 `{"ok":false,"error":"bad_request"}`
-- **`paired` のときに `pair` をやり直すと、古い鍵は `kido-agent pair` の時点で消える**。つまり組める時間を開くと、それまでの鍵は使えなくなる
+- **`paired` のときに組み直すと、古い鍵は `kido-agent setup` で組み直すと答えた時点で消える**。つまり組める時間を開くと、それまでの鍵は使えなくなる
 
 ### `POST /v1/list`
 
@@ -137,4 +137,4 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
   - `wait`(bool、既定 false)。true の操作は `run` で終わるまで待ち、終了コードで答える(上)。
     終了コードが取れる種類(Windows: `.ps1` `.bat` `.cmd` `.exe`、Mac: `.sh` `.command`、
     Linux: `.desktop` 以外)だけに付けられる。ショートカットやアプリに付けると `broken`
-  - 知らないキーは `kido-agent check` で警告する(動作は止めない)
+  - 知らないキーは `kido-agent status` で警告する(動作は止めない)

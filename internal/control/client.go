@@ -1,4 +1,4 @@
-// Package control は、同じ PC の CLI(pair・check・uninstall)や手足役と、
+// Package control は、同じ PC の CLI(setup・status・stop・uninstall)や手足役と、
 // 待ち受け役の常駐アプリとの間の取り決め。
 package control
 

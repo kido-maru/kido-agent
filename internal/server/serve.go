@@ -49,7 +49,7 @@ func Serve(version string) int {
 	kp, _ := paths.KeyFile()
 	key, err := auth.LoadKey(kp)
 	if err != nil {
-		log.Printf("%v。組み直してください(kido-agent pair)", err)
+		log.Printf("%v。組み直してください(kido-agent setup)", err)
 	}
 	ag := newAgent(kp, dir, runtime.GOOS, version, key)
 	// Windows で昇格して起動されていたら、普通のユーザーの権限で起動し直す

@@ -9,7 +9,7 @@ import (
 
 const TomlName = "kido.toml"
 
-// Action は操作フォルダ 1 つぶん。本体へ送る項目のほか、check で見せる理由も持つ。
+// Action は操作フォルダ 1 つぶん。本体へ送る項目のほか、status で見せる理由も持つ。
 type Action struct {
 	ID      string
 	Name    string

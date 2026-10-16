@@ -14,7 +14,7 @@ type Action struct {
 	ID      string
 	Name    string
 	Icon    string
-	Confirm *string // nil は「確認なし」、"" は「本文なしで確認する」
+	Confirm bool // 押したときに確認を出す(文は出さない)
 	Broken  bool
 	// RequireLogin が true の操作は、誰もログインしていない(手足役がいない)ときは
 	// 押せない。既定の false なら、ログイン前でも待ち受け役が画面なしで動かす

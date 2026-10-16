@@ -9,7 +9,7 @@ type wireAction struct {
 	ID      string  `json:"id"`
 	Name    string  `json:"name"`
 	Icon    string  `json:"icon,omitempty"`
-	Confirm *string `json:"confirm,omitempty"`
+	Confirm *string `json:"confirm,omitempty"` // 確認を出すなら "" を送る(本体は中身を読まない)
 	Broken  bool    `json:"broken,omitempty"`
 	// Login は「今は押せない(ログインが要る)」印。手足役がいないときに、
 	// require_login の操作へ付ける。手足役がいれば付けない。
@@ -27,8 +27,12 @@ func ListBody(actions []Action, sessionActive bool) (body []byte, sent int) {
 			continue
 		}
 		login := !sessionActive && a.RequireLogin
+		var confirm *string
+		if a.Confirm {
+			confirm = new(string)
+		}
 		wire = append(wire, wireAction{ID: a.ID, Name: a.Name, Icon: a.Icon,
-			Confirm: a.Confirm, Broken: a.Broken, Login: login})
+			Confirm: confirm, Broken: a.Broken, Login: login})
 	}
 	if len(wire) > MaxActions {
 		wire = wire[:MaxActions]

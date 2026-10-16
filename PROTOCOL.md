@@ -69,7 +69,7 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
 ```json
 {"actions":[
   {"id":"10_sleep","name":"スリープ","icon":"moon"},
-  {"id":"40_shutdown","name":"シャットダウン","icon":"power","confirm":"開いているアプリはすべて閉じられます。\n保存していないデータは消えてしまいます。"},
+  {"id":"40_shutdown","name":"シャットダウン","icon":"power","confirm":""},
   {"id":"50_Minecraft起動","name":"Minecraft起動","broken":true},
   {"id":"20_lock","name":"画面ロック","icon":"lock","login":true}
 ]}
@@ -79,7 +79,8 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
 - `id` はフォルダ名そのもの。`name` はフォルダ名から先頭の番号と `_` を除いたもの
   - `10_sleep` → `sleep`。同梱の操作は `kido.toml` の `name` で日本語名を付ける(下)
 - `icon` は `kido.toml` の `icon`。無ければ省く
-- `confirm` は `kido.toml` の `confirm`。無ければ省く。空文字なら `""` を送る(本文なしの確認)
+- `confirm` は、`kido.toml` に `confirm = true` のある操作だけに付け、中身はいつも `""`(本文なしの確認)。無ければ省く。
+  受け取る側は、文字列なら中身を見ずに確認を出す(古い版の常駐アプリは文を送ってくる)
 - `broken` は設定が壊れていて押せない操作(実行できるファイルが無い・2つ以上ある・`kido.toml` が読めない)だけに `true` を付ける
 - `login` は「いまは押せない(ログインが要る)」印。誰もログインしていない(`session` が
   `false`)ときに、`require_login` の操作へ付ける。ログイン中は付けない
@@ -117,7 +118,6 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
 | `id` | 64 バイト(UTF-8)。`/` `\` 制御文字を含まない。`.` で始まらない |
 | `name` | 32 文字 |
 | `icon` | 40 文字、`[a-z0-9-]` のみ(違えば省く) |
-| `confirm` | 200 文字 |
 
 ## 操作フォルダ(常駐アプリの中の話)
 
@@ -129,7 +129,7 @@ Kido の本体(スマホからの操作を、同じ LAN の PC に取り次ぐ�
 - `kido.toml`(任意、UTF-8、BOM 可)
   - `name`(表示名。無ければフォルダ名から作る)
   - `icon`
-  - `confirm`
+  - `confirm`(bool、既定 false。昔の文字列は true として読み、check で警告する)
   - `run`(実行するファイル名。フォルダの中だけ)
   - `require_login`(bool、既定 false)。true の操作は、誰もログインしていないときは
     一覧で `login` が付き、`run` すると `needs_login` になる。false(既定)の操作は、

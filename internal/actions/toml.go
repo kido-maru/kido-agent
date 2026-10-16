@@ -14,7 +14,7 @@ import (
 type kidoToml struct {
 	Name         *string `toml:"name"`
 	Icon         *string `toml:"icon"`
-	Confirm      *string `toml:"confirm"`
+	Confirm      any     `toml:"confirm"` // bool。昔の文字列も読む(applyToml)
 	Run          *string `toml:"run"`
 	RequireLogin *bool   `toml:"require_login"`
 	Wait         *bool   `toml:"wait"`
@@ -60,12 +60,18 @@ func applyToml(a *Action, cfg kidoToml) {
 				"\"(英小文字・数字・- だけ、40 文字まで。https://lucide.dev/icons の名前)")
 		}
 	}
-	if cfg.Confirm != nil {
-		c, cut := truncateRunes(*cfg.Confirm, MaxConfirm)
-		if cut {
-			a.warn("confirm が長いので 200 文字で切ります")
-		}
-		a.Confirm = &c
+	// 確認は有り無しだけで、文は出さない。昔の書き方(文字列)や知らない形は「確認あり」に倒す。
+	// 壊れた扱いにすると押せなくなり、確認を消す扱いにすると確かめずに動いてしまう
+	switch v := cfg.Confirm.(type) {
+	case nil:
+	case bool:
+		a.Confirm = v
+	case string:
+		a.Confirm = true
+		a.warn("confirm に書いた文はスマホに出ません。確認は出すので、confirm = true に書き換えてください")
+	default:
+		a.Confirm = true
+		a.warn("confirm は true か false で書きます。確認は出します")
 	}
 	if cfg.RequireLogin != nil {
 		a.RequireLogin = *cfg.RequireLogin

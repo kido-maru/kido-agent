@@ -220,7 +220,10 @@ try {
         if (-not $env:KIDO_AGENT_REPAIR) { $env:KIDO_AGENT_REPAIR = 'no' }
     }
     # 残り時間を同じ行で書き換えるので、出力を横取りせず、この画面にそのまま書かせる。
-    Start-Process -FilePath "$Dest\kido-agent.exe" -ArgumentList 'setup' -NoNewWindow -Wait
+    # -Wait は使わない。setup が起こした常駐アプリ(ログイン前を入れたときの kido-agentd)の
+    # 終わりまで待ち、台本が戻らなくなる。setup 自身の終わりだけを待つ
+    $setup = Start-Process -FilePath "$Dest\kido-agent.exe" -ArgumentList 'setup' -NoNewWindow -PassThru
+    $setup.WaitForExit()
     Write-Host '困ったときは: kido-agent status'
 } catch {
     Write-Host "インストールに失敗しました: $($_.Exception.Message)" -ForegroundColor Red

@@ -119,6 +119,9 @@ func cmdPair(out io.Writer) int {
 	// 多くの人は起動ページに PC を登録済みなので、ここで「登録して」とは言わない。
 	// 待っていることだけを伝え、見つからずに終わったときに原因の候補を出す。
 	fmt.Fprintln(out, "起動丸の本体と組みます(10 分以内)。")
+	// 本体は、スマホでこの画面が開いている間だけ組みに来る。同じネットワークに本体が
+	// 2 台あっても、画面を開いている方と組むため
+	fmt.Fprintln(out, "スマホの起動ページで、メニューの「パソコンの操作」を開いたまま待ってください。")
 	return waitPairing(out, st, func() (control.Status, error) {
 		return control.Call("GET", "/control/status")
 	}, time.Sleep)

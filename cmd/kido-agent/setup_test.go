@@ -29,7 +29,7 @@ func TestWaitPairingTimeout(t *testing.T) {
 	get := func() (control.Status, error) { return control.Status{State: auth.StateUnpaired}, nil }
 	code := waitPairing(&out, control.Status{State: auth.StatePairing, Remaining: 1}, get, func(time.Duration) {})
 	s := out.String()
-	if code != 1 || !strings.Contains(s, "登録したか") || !strings.Contains(s, "「許可」") || !strings.Contains(s, "電源") || !strings.Contains(s, "kido-agent setup") {
+	if code != 1 || !strings.Contains(s, "登録したか") || !strings.Contains(s, "「パソコンの操作」を開いていたか") || !strings.Contains(s, "「許可」") || !strings.Contains(s, "電源") || !strings.Contains(s, "kido-agent setup") {
 		t.Fatal(s)
 	}
 }

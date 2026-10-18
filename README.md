@@ -29,7 +29,7 @@ curl -fsSL https://pc.kido.page/install.sh | sh
    - Mac: `~/.local/bin/kido-agent` と LaunchAgent(`page.kido.agent`)。再起動・シャットダウン用に `/sbin/shutdown` だけをパスワードなしで許す設定(`/etc/sudoers.d/kido-agent`)を入れるか聞く
    - Linux: `~/.local/bin/kido-agent` と `systemd --user` の `kido-agent.service`
 2. ファイアウォールの確認(Windows は「Windows セキュリティ」)が出たら「許可」を押す
-3. `kido-agent setup` が動き、起動丸の本体が見つけに来るのを 10 分のあいだ待つ。起動ページにこの PC をまだ登録していなければ、そのあいだにスマホで登録する
+3. `kido-agent setup` が動き、起動丸の本体が見つけに来るのを 10 分のあいだ待つ。そのあいだ、スマホの起動ページでメニューの「パソコンの操作」を開いておく(本体は、この画面が開いている間だけ組みに来る)。この PC をまだ登録していなければ、起動ページで登録する
    (入れ直しで、もう組めているときは組み直すか聞く。既定はいいえ)
 4. 組めたら操作フォルダ `~/KidoButtons` を開く
 5. Windows・Linux では、ログイン前(電源を入れただけ)でも使うか聞く(初めてなら既定は「はい」)

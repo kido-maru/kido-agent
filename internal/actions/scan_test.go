@@ -40,7 +40,7 @@ func TestScanOneRunnable(t *testing.T) {
 	root := t.TempDir()
 	mkAction(t, root, "50_Minecraft起動", "start.lnk", "memo.txt", "desktop.ini")
 	a := scanOne(t, root, "windows")
-	if a.Broken || a.Run != "start.lnk" || a.Name != "Minecraft起動" || a.Icon != "" || a.Confirm != nil {
+	if a.Broken || a.Run != "start.lnk" || a.Name != "Minecraft起動" || a.Icon != "" || a.Confirm {
 		t.Fatalf("%+v", a)
 	}
 }
@@ -74,17 +74,27 @@ func TestScanBrokenCases(t *testing.T) {
 func TestScanTomlRunAndBOM(t *testing.T) {
 	root := t.TempDir()
 	d := mkAction(t, root, "30_restart", "a.bat", "start.bat")
-	toml := "\xEF\xBB\xBFname = \"再起動\"\nicon = \"rotate-cw\"\nconfirm = \"\"\nrun = \"start.bat\"\ncolor = \"red\"\n"
+	toml := "\xEF\xBB\xBFname = \"再起動\"\nicon = \"rotate-cw\"\nconfirm = true\nrun = \"start.bat\"\ncolor = \"red\"\n"
 	writeFile(t, d+"/kido.toml", toml)
 	a := scanOne(t, root, "windows")
 	if a.Broken || a.Run != "start.bat" || a.Name != "再起動" || a.Icon != "rotate-cw" {
 		t.Fatalf("%+v", a)
 	}
-	if a.Confirm == nil || *a.Confirm != "" {
-		t.Fatal("confirm = \"\" は本文なしの確認として残す")
+	if !a.Confirm {
+		t.Fatal("confirm = true で確認を出す")
 	}
 	if len(a.Warnings) != 1 || !strings.Contains(a.Warnings[0], "color") {
 		t.Fatalf("知らないキーは警告だけ: %v", a.Warnings)
+	}
+}
+
+func TestScanConfirmTextIsAMistake(t *testing.T) {
+	// confirm は true / false だけ。文を書いたら、ほかの書き方の間違いと同じく押せなくする
+	root := t.TempDir()
+	d := mkAction(t, root, "x", "a.bat")
+	writeFile(t, d+"/kido.toml", "confirm = \"本当に実行しますか?\"\n")
+	if a := scanOne(t, root, "windows"); !a.Broken || a.Confirm {
+		t.Fatalf("%+v", a)
 	}
 }
 

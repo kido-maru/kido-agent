@@ -73,12 +73,11 @@
   <p>フォルダに <code>kido.toml</code> を置くと、名前やアイコンを変えられます。</p>
 <pre>name = "マイクラ起動"          # スマホに出る名前(32 文字まで)
 icon = "gamepad-2"            # アイコンの名前
-confirm = "本当に起動しますか?"  # 押したときに確認を出す(200 文字まで)
+confirm = true                # 押したときに「実行しますか?」と確認を出す
 run = "start.bat"             # 動かすファイルが 2 つ以上あるときに、どれかを選ぶ
 require_login = true          # ログインしているときだけ押せるようにする(窓の要るアプリ向け)</pre>
   <ul>
     <li><code>icon</code> は <a href="https://lucide.dev/icons" target="_blank" rel="noopener">lucide.dev/icons</a> にある名前を、英小文字のまま書きます</li>
-    <li><code>confirm = ""</code> にすると、文章なしで「実行しますか」だけを聞きます</li>
     <li><code>run</code> には同じフォルダの中のファイル名だけを書けます</li>
     <li><code>require_login = true</code> にすると、ログインしているときだけ押せます。ログイン前に押すと窓のあるアプリは見えないところで起動するので、窓が要る操作に付けます</li>
   </ul>

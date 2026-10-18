@@ -14,7 +14,7 @@ import (
 type kidoToml struct {
 	Name         *string `toml:"name"`
 	Icon         *string `toml:"icon"`
-	Confirm      *string `toml:"confirm"`
+	Confirm      *bool   `toml:"confirm"`
 	Run          *string `toml:"run"`
 	RequireLogin *bool   `toml:"require_login"`
 	Wait         *bool   `toml:"wait"`
@@ -61,11 +61,7 @@ func applyToml(a *Action, cfg kidoToml) {
 		}
 	}
 	if cfg.Confirm != nil {
-		c, cut := truncateRunes(*cfg.Confirm, MaxConfirm)
-		if cut {
-			a.warn("confirm が長いので 200 文字で切ります")
-		}
-		a.Confirm = &c
+		a.Confirm = *cfg.Confirm
 	}
 	if cfg.RequireLogin != nil {
 		a.RequireLogin = *cfg.RequireLogin

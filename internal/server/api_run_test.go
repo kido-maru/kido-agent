@@ -69,10 +69,9 @@ func TestRunErrors(t *testing.T) {
 func TestListLimits(t *testing.T) {
 	ta := pairedAgent(t)
 	ta.setLoggedIn(true) // login の印が入らない状態で切り詰めだけを見る
-	long := strings.Repeat("あ", 200)
 	for i := 0; i < 30; i++ {
 		d := mkAction(t, ta.actionsDir, fmt.Sprintf("%02d_%s", i, strings.Repeat("x", 50)), "a.bat")
-		writeFile(t, d+"/kido.toml", "name = \""+strings.Repeat("名", 40)+"\"\nconfirm = \""+long+"\"\nicon = \""+strings.Repeat("a", 40)+"\"\n")
+		writeFile(t, d+"/kido.toml", "name = \""+strings.Repeat("名", 40)+"\"\nconfirm = true\nicon = \""+strings.Repeat("a", 40)+"\"\n")
 	}
 	_, n := ta.hello(t)
 	res := call(t, ta.apiHandler(), "POST", "/v1/list", listReq(n, auth.Sign(testKey, "list", n)))

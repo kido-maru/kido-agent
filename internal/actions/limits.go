@@ -14,7 +14,6 @@ const (
 	MaxIDBytes   = 64
 	MaxNameRunes = 32
 	MaxIconRunes = 40
-	MaxConfirm   = 200
 	MaxBodyBytes = 4096
 )
 

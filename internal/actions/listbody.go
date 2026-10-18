@@ -6,11 +6,11 @@ import (
 )
 
 type wireAction struct {
-	ID      string  `json:"id"`
-	Name    string  `json:"name"`
-	Icon    string  `json:"icon,omitempty"`
-	Confirm *string `json:"confirm,omitempty"`
-	Broken  bool    `json:"broken,omitempty"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Icon    string `json:"icon,omitempty"`
+	Confirm bool   `json:"confirm,omitempty"`
+	Broken  bool   `json:"broken,omitempty"`
 	// Login は「今は押せない(ログインが要る)」印。手足役がいないときに、
 	// require_login の操作へ付ける。手足役がいれば付けない。
 	Login bool `json:"login,omitempty"`

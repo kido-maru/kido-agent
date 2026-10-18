@@ -6,16 +6,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"kido-agent/internal/service"
 )
 
 // RemoveAutostart はログイン時の自動起動(systemd --user)を外す。
 func RemoveAutostart(out io.Writer) {
-	exec.Command("systemctl", "--user", "disable", "--now", "kido-agent.service").Run()
+	exec.Command("systemctl", "--user", "disable", "--now", service.Unit).Run()
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return
 	}
-	unit := filepath.Join(dir, "systemd", "user", "kido-agent.service")
+	unit := filepath.Join(dir, "systemd", "user", service.Unit)
 	if err := os.Remove(unit); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(out, "! 自動起動の設定を消せませんでした:", err)
 	}

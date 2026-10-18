@@ -56,7 +56,12 @@ func TestCheckActionsSameShortName(t *testing.T) {
 
 func TestCheckPairing(t *testing.T) {
 	var out bytes.Buffer
-	if bad := checkPairing(&out, control.Status{State: auth.StatePaired, Paired: true}, nil, true); bad || !strings.Contains(out.String(), "✓") {
+	if bad := checkPairing(&out, control.Status{State: auth.StatePaired, Paired: true, Version: version}, nil, true); bad || !strings.Contains(out.String(), "✓ 動いています\n") || !strings.Contains(out.String(), "組めています") {
+		t.Fatal(out.String())
+	}
+	out.Reset()
+	// 入れ直しても前の版が動き続けているときは、止めて起こし直すよう伝える
+	if checkPairing(&out, control.Status{State: auth.StatePaired, Paired: true, Version: "v0.0.1"}, nil, true); !strings.Contains(out.String(), "v0.0.1") || !strings.Contains(out.String(), "kido-agent stop → start") {
 		t.Fatal(out.String())
 	}
 	out.Reset()
@@ -64,7 +69,7 @@ func TestCheckPairing(t *testing.T) {
 		t.Fatal(out.String())
 	}
 	out.Reset()
-	if bad := checkPairing(&out, control.Status{State: auth.StateUnpaired}, nil, false); !bad || !strings.Contains(out.String(), "kido-agent pair") {
+	if bad := checkPairing(&out, control.Status{State: auth.StateUnpaired}, nil, false); !bad || !strings.Contains(out.String(), "kido-agent setup") {
 		t.Fatal(out.String())
 	}
 }

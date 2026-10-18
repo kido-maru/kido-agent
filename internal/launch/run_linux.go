@@ -21,7 +21,7 @@ func Run(dir, file string) error {
 }
 
 // RunWait は終わるまで待って終了コードを返す(kido.toml の wait)。
-// .desktop は gio に渡すと終わりが分からないので断る(check でも知らせる)。
+// .desktop は gio に渡すと終わりが分からないので断る(status でも知らせる)。
 func RunWait(dir, file string) (int, error) {
 	path := filepath.Join(dir, file)
 	switch strings.ToLower(filepath.Ext(path)) {

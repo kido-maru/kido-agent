@@ -5,18 +5,16 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
-)
 
-const launchLabel = "page.kido.agent"
+	"kido-agent/internal/service"
+)
 
 // RemoveAutostart はログイン時の自動起動(LaunchAgent)を外す。
 func RemoveAutostart(out io.Writer) {
-	home, _ := os.UserHomeDir()
-	plist := filepath.Join(home, "Library", "LaunchAgents", launchLabel+".plist")
+	plist := service.PlistPath()
 	// bootout で止めてから外す。KeepAlive のため、先に止めると起こし直される。
-	exec.Command("launchctl", "bootout", "gui/"+strconv.Itoa(os.Getuid())+"/"+launchLabel).Run()
+	exec.Command("launchctl", "bootout", "gui/"+strconv.Itoa(os.Getuid())+"/"+service.LaunchLabel).Run()
 	if err := os.Remove(plist); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(out, "! 自動起動の設定を消せませんでした:", err)
 	}

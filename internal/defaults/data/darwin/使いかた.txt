@@ -22,4 +22,4 @@ kido.toml に wait = true と書くと、スクリプトが終わってから返
 https://github.com/Kamesuta/kido-agent/tree/main/examples
 
 ■ うまくいかないとき
-ターミナルで kido-agent check を実行すると、直し方が出ます。
+ターミナルで kido-agent status を実行すると、直し方が出ます。

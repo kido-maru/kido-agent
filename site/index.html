@@ -84,24 +84,28 @@ require_login = true          # ログインしているときだけ押せるよ
   </ul>
 
   <h2>ログイン前(電源を入れただけ)でも使う</h2>
-  <p>サインインしていなくても、電源を入れてゲームのサーバーを立ち上げる、スリープ・再起動・シャットダウンなどを受け取れるようにできます。インストールの最後にも尋ねますが、あとから切り替えるにはこのコマンドを使います。</p>
-  <div class="command"><code>kido-agent boot on</code><button type="button">コピー</button></div>
+  <p>サインインしていなくても、電源を入れてゲームのサーバーを立ち上げる、スリープ・再起動・シャットダウンなどを受け取れるようにできます。インストールの最後にも聞きますが、あとから切り替えるにはこのコマンドを使い、「ログイン前(電源を入れただけ)でも使いますか?」に答えます。</p>
+  <div class="command"><code>kido-agent setup</code><button type="button">コピー</button></div>
   <ul>
     <li>Windows: 起動時に動く仕組みを登録します(管理者の確認が一度出ます)。サインイン中は、これまでどおりログイン中の画面で操作が動きます</li>
     <li>Linux(Ubuntu で動作確認)にも対応しています</li>
     <li>Mac は、起動時のディスクの暗号化(FileVault)がパスワードを求めるため、ログイン前には動かせません(サインインすれば使えます)</li>
   </ul>
   <p>ログインしていない間に押した操作は、画面のないところで動きます。<strong>窓のあるアプリは見えないところで起動する</strong>ので、窓が要る操作は <code>kido.toml</code> に <code>require_login = true</code> を書いて、ログインしているときだけ押せるようにしてください(同梱の画面ロックはこの設定です)。</p>
-  <p>元に戻すには <code>kido-agent boot off</code>、今どうなっているかは <code>kido-agent boot</code> で分かります。</p>
+  <p>元に戻すときも <code>kido-agent setup</code> で「いいえ」と答えます。今どうなっているかは <code>kido-agent status</code> で分かります。</p>
 
   <h2>困ったとき</h2>
   <div class="card">
-    <h3 style="margin-top:0">操作フォルダがおかしい・スマホに出ない</h3>
-    <div class="command"><code>kido-agent check</code><button type="button">コピー</button></div>
-    <p>フォルダごとに ✓(使える)・✗(押せない。理由と直し方も出ます)・!(動くが気を付けること)を表示します。組めているかも分かります。</p>
+    <h3 style="margin-top:0">動いているか・操作フォルダがおかしい・スマホに出ない</h3>
+    <div class="command"><code>kido-agent status</code><button type="button">コピー</button></div>
+    <p>動いているか、組めているかと、フォルダごとに ✓(使える)・✗(押せない。理由と直し方も出ます)・!(動くが気を付けること)を表示します。</p>
+    <h3>止めたい・動かしたい</h3>
+    <div class="command"><code>kido-agent stop</code><button type="button">コピー</button></div>
+    <div class="command"><code>kido-agent start</code><button type="button">コピー</button></div>
+    <p>止めても、次にログインするとまた動きます。</p>
     <h3>本体と組み直したい・組めなかった</h3>
-    <div class="command"><code>kido-agent pair</code><button type="button">コピー</button></div>
-    <p>組み直すと、それまでの組み合わせは使えなくなります。組めないときは、ファイアウォールの許可、本体の電源、PC と本体が同じネットワークにいるかを確かめてください。</p>
+    <div class="command"><code>kido-agent setup</code><button type="button">コピー</button></div>
+    <p>組めているときは、組み直すか聞かれます。組み直すと、それまでの組み合わせは使えなくなります。組めないときは、ファイアウォールの許可、本体の電源、PC と本体が同じネットワークにいるかを確かめてください。</p>
   </div>
 
   <h2>取り除く</h2>

@@ -184,15 +184,6 @@ function Wait-Agent {
     return $null
 }
 
-# Confirm-Boot はログイン前でも使うか尋ねる。既定は「はい」。画面から入力できない
-# (自動化)ときは尋ねず「いいえ」にする(勝手に UAC を出さないため)。
-function Confirm-Boot {
-    if (-not [Environment]::UserInteractive) { return $false }
-    Write-Host ''
-    $ans = Read-Host 'ログイン前(電源を入れただけ)でも使えるようにしますか? [Y/n]'
-    return ($ans -notmatch '^[nN]')
-}
-
 $work = Join-Path ([IO.Path]::GetTempPath()) ("kido-agent-" + [Guid]::NewGuid())
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
@@ -203,7 +194,7 @@ try {
     New-Item -ItemType Directory -Path $Dest -Force | Out-Null
     Copy-Program $pkg
     Get-ChildItem -LiteralPath $Dest -Filter '*.exe' | Unblock-File
-    $version = ((& "$Dest\kido-agent.exe" version) -split ' ')[-1]
+    $version = ((& "$Dest\kido-agent.exe" --version) -split ' ')[-1]
     Register-Agent $version
     $env:Path = "$env:Path;$Dest"
     Write-Host "入れました($version): $Dest"
@@ -221,30 +212,19 @@ try {
     if (-not $status) { throw '常駐アプリが起動しませんでした。ログ: %USERPROFILE%\.kido-agent\kido-agent.log' }
     New-FolderShortcut
     Write-Host ''
-    # 更新で入れ直したときは組み直さない(pair は古い鍵を消してしまう)。
-    if ($status.paired) {
-        Write-Host '起動丸の本体とはもう組めています。組み直すときは: kido-agent pair'
-    } else {
-        # 残り時間を同じ行で書き換えるので、出力を横取りせず、この画面にそのまま書かせる。
-        Start-Process -FilePath "$Dest\kido-agent.exe" -ArgumentList 'pair' -NoNewWindow -Wait
+    # 組む・ログイン前にも使うかを選ぶ。組めていれば組み直すかを聞く(既定はいいえ)ので、
+    # 更新で入れ直しても鍵は消えない。KIDO_AGENT_BOOT=on/off/skip を渡すと聞かない(自動化・CI 向け)。
+    # 画面から答えられない(自動化)ときは聞かせない(勝手に UAC を出さない・入力待ちで止まらない)。
+    if (-not [Environment]::UserInteractive) {
+        if (-not $env:KIDO_AGENT_BOOT) { $env:KIDO_AGENT_BOOT = 'skip' }
+        if (-not $env:KIDO_AGENT_REPAIR) { $env:KIDO_AGENT_REPAIR = 'no' }
     }
-    & "$Dest\kido-agent.exe" open | Out-Null
-    Write-Host ''
-    Write-Host '操作フォルダ(~/KidoButtons)を開きました。ショートカットを入れたフォルダを作ると、スマホに操作が増えます。'
-
-    # KIDO_AGENT_BOOT=on/off/skip を渡すと尋ねない(自動化・CI 向け)。
-    $bootChoice = $env:KIDO_AGENT_BOOT
-    if ($hadTask) {
-        Write-Host 'ログイン前(電源を入れただけ)でも使えます(設定済み)。'
-    } elseif ($bootChoice -eq 'skip' -or $bootChoice -eq 'off') {
-        Write-Host 'あとから設定できます: kido-agent boot on'
-    } elseif ($bootChoice -eq 'on' -or (Confirm-Boot)) {
-        Write-Host 'このあと管理者の確認(UAC)が出ます。「はい」を押してください。'
-        & "$Dest\kido-agent.exe" boot on
-    } else {
-        Write-Host 'あとから設定できます: kido-agent boot on'
-    }
-    Write-Host '困ったときは: kido-agent check'
+    # 残り時間を同じ行で書き換えるので、出力を横取りせず、この画面にそのまま書かせる。
+    # -Wait は使わない。setup が起こした常駐アプリ(ログイン前を入れたときの kido-agentd)の
+    # 終わりまで待ち、台本が戻らなくなる。setup 自身の終わりだけを待つ
+    $setup = Start-Process -FilePath "$Dest\kido-agent.exe" -ArgumentList 'setup' -NoNewWindow -PassThru
+    $setup.WaitForExit()
+    Write-Host '困ったときは: kido-agent status'
 } catch {
     Write-Host "インストールに失敗しました: $($_.Exception.Message)" -ForegroundColor Red
 } finally {

@@ -10,8 +10,10 @@ import (
 
 // Linux は linger(ログインしていなくても user のサービスを動かし続ける設定)で、
 // ログイン前でも待ち受け役を動かせる。root 権限が要るときは案内する。
-func enable(out io.Writer) int  { return setLinger(out, true) }
-func disable(out io.Writer) int { return setLinger(out, false) }
+const Supported = true
+
+func Enable(out io.Writer) int  { return setLinger(out, true) }
+func Disable(out io.Writer) int { return setLinger(out, false) }
 
 func setLinger(out io.Writer, on bool) int {
 	verb := "enable-linger"
@@ -32,22 +34,12 @@ func setLinger(out io.Writer, on bool) int {
 	return 0
 }
 
-func status(out io.Writer) int {
+func Enabled() bool {
 	cmd := exec.Command("loginctl", "show-user", currentUser(), "-p", "Linger", "--value")
 	var buf bytes.Buffer
 	cmd.Stdout = &buf
 	cmd.Run()
-	if strings.TrimSpace(buf.String()) == "yes" {
-		fmt.Fprintln(out, "ログイン前: 動きます(linger 有効)")
-	} else {
-		fmt.Fprintln(out, "ログイン前: 動きません(kido-agent boot on で有効にできます)")
-	}
-	return 0
-}
-
-func usage(out io.Writer) int {
-	fmt.Fprintln(out, "使い方: kido-agent boot [on|off]")
-	return 2
+	return strings.TrimSpace(buf.String()) == "yes"
 }
 
 func currentUser() string {

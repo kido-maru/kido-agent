@@ -1,5 +1,5 @@
 name = "マイクラ停止"
 icon = "square"
-confirm = "サーバーに入っている人は切断されます。"
+confirm = true
 # 止まるまで待ち、止まらなかったらスマホに「失敗しました」と出す
 wait = true

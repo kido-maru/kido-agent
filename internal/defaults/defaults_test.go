@@ -27,7 +27,7 @@ func TestDefaultsWrittenOnlyWhenAbsent(t *testing.T) {
 				t.Errorf("%s/%s: %+v", goos, a.ID, a)
 			}
 		}
-		if list[3].Name != "シャットダウン" || list[3].Confirm == nil {
+		if list[3].Name != "シャットダウン" || !list[3].Confirm {
 			t.Errorf("%+v", list[3])
 		}
 		// 使いかた.txt はフォルダ直下のファイルなので操作にならない(上の 4 つで確かめ済み)。

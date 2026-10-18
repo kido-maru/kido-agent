@@ -34,3 +34,12 @@ func TestListBodyLoginMarking(t *testing.T) {
 		t.Fatalf("login ログイン中:\n%s", got)
 	}
 }
+
+func TestListBodyConfirm(t *testing.T) {
+	// 確認は有り無しだけで、文は送らない
+	list := []Action{{ID: "10_sleep", Name: "s"}, {ID: "40_shutdown", Name: "d", Confirm: true}}
+	body, _ := ListBody(list, true)
+	if got := string(body); got != `{"actions":[{"id":"10_sleep","name":"s"},{"id":"40_shutdown","name":"d","confirm":true}]}` {
+		t.Fatal(got)
+	}
+}

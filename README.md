@@ -74,7 +74,7 @@ KIDO_AGENT_TARBALL=/path/kido-agent-darwin-arm64.tar.gz sh install/install.sh
 |---|---|
 | `name` | 表示名(32 文字まで) |
 | `icon` | アイコン名。[lucide](https://lucide.dev/icons) の名前(英小文字・数字・`-`、40 文字まで)。違えば省く |
-| `confirm` | 押したときの確認の文章(200 文字まで)。`""` なら文章なしで確認だけ出す |
+| `confirm` | `true` にすると、押したときに「実行しますか?」と確認を出す。文は書けない。既定 `false` |
 | `run` | 実行するファイル名。2 つ以上あるときに選ぶ。フォルダの中のファイル名だけ |
 | `require_login` | `true` にすると、ログインしているときだけ押せる(ログイン前は押せない)。窓の要るアプリ向け。既定 `false` |
 | `wait` | `true` にすると、スクリプトが終わるまで待ってから返事をし、失敗(終了コードが 0 以外)をスマホに知らせる。15 秒ほどで終わるものだけに付ける。ショートカットやアプリには使えない。既定 `false` |
@@ -82,7 +82,7 @@ KIDO_AGENT_TARBALL=/path/kido-agent-darwin-arm64.tar.gz sh install/install.sh
 ```toml
 name = "マイクラ起動"
 icon = "gamepad-2"
-confirm = "本当に起動しますか?"
+confirm = true
 run = "start.bat"
 ```
 

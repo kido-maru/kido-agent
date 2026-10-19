@@ -22,8 +22,8 @@ func firewallHint() string {
 
 func printPairTimeout(out io.Writer) {
 	fmt.Fprintln(out, "✗ 10 分のあいだに本体から届きませんでした。次を確かめてください。")
-	fmt.Fprintln(out, "  ・スマホの起動ページで、この PC を登録したか")
-	fmt.Fprintln(out, "  ・待っている間、スマホでメニューの「パソコンの操作」を開いていたか")
+	fmt.Fprintln(out, "  ・起動ページで、この PC を登録したか")
+	fmt.Fprintln(out, "  ・待っている間、起動ページでメニューの「パソコンの操作」を開いていたか")
 	fmt.Fprintln(out, "  ・ファイアウォールの確認で「許可」を押したか")
 	if hint := firewallHint(); hint != "" {
 		fmt.Fprintln(out, "    "+hint)

@@ -22,7 +22,7 @@ func envOr(name, def string) string {
 
 // ActionsDir は利用者が操作を置くフォルダ。
 // 利用者が自分で開いて触る場所なので、隠しフォルダではなくホーム直下に置く。
-// 名前は「ここに置いたものがスマホのボタンになる」がそのまま伝わるものにした。
+// 名前は「ここに置いたものが起動ページのボタンになる」がそのまま伝わるものにした。
 func ActionsDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {

@@ -65,7 +65,7 @@ func checkPairing(out io.Writer, st control.Status, stErr error, hasKey bool) (b
 		fmt.Fprintf(out, "… 組める時間が開いています(残り %d:%02d)\n", st.Remaining/60, st.Remaining%60)
 	default:
 		fmt.Fprintln(out, "✗ まだ起動丸の本体と組んでいません")
-		fmt.Fprintln(out, "    → kido-agent setup を実行して、スマホの起動ページでこの PC を登録してください")
+		fmt.Fprintln(out, "    → kido-agent setup を実行して、起動ページでこの PC を登録してください")
 		return true
 	}
 	return false

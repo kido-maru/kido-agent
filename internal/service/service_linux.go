@@ -13,3 +13,6 @@ func start() error { return exec.Command("systemctl", "--user", "start", Unit).R
 
 // stop は止めるだけで enable は残す。次のログイン(linger なら起動時)にまた動く。
 func stop() { exec.Command("systemctl", "--user", "stop", Unit).Run() }
+
+// startHere は Windows で画面の分だけを起こす口。手足役は生まれないので呼ばれないが、start と同じにしておく。
+func startHere() error { return start() }

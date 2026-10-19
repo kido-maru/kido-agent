@@ -44,9 +44,9 @@ func HelperMissing(st control.Status) bool {
 }
 
 // startHelper はこの画面に kido-agentd を起こし、手足役として取りに来るまで待つ。
-// start() は起動時タスクがもう動いていれば、この画面の分を起こすだけになる。
+// 待ち受け役はもう動いているので、起動時タスクには触らない。
 func startHelper(out io.Writer) int {
-	if err := start(); err != nil {
+	if err := startHere(); err != nil {
 		fmt.Fprintln(out, "✗ 起動できませんでした:", err)
 		return 1
 	}

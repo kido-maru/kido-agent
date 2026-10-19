@@ -37,3 +37,6 @@ func start() error {
 // stop は launchd から外す。KeepAlive なので、外さずに止めると起こし直される。
 // plist は残るので、次のログインでまた読み込まれる。
 func stop() { exec.Command("launchctl", "bootout", launchTarget()).Run() }
+
+// startHere は Windows で画面の分だけを起こす口。手足役は生まれないので呼ばれないが、start と同じにしておく。
+func startHere() error { return start() }

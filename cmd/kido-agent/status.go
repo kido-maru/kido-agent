@@ -27,8 +27,8 @@ func cmdStatus(out io.Writer) int {
 	fmt.Fprintf(out, "起動丸エージェント %s\n\n", version)
 	bad := checkPairing(out, st, stErr, hasKey())
 	if stErr == nil && service.HelperMissing(st) {
-		fmt.Fprintln(out, "✗ この画面で操作を動かす役がいません(ログインしていないとみなされます)")
-		fmt.Fprintln(out, "    → kido-agent start で起こせます")
+		fmt.Fprintln(out, "✗ 起動ページから「ログインが必要」な操作が押せない状態です")
+		fmt.Fprintln(out, "    → kido-agent start で直ります")
 		bad = true
 	}
 	printBoot(out)

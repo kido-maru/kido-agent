@@ -52,7 +52,7 @@ func startHelper(out io.Writer) int {
 	}
 	for end := time.Now().Add(5 * time.Second); time.Now().Before(end); time.Sleep(100 * time.Millisecond) {
 		if st, err := control.Call("GET", "/control/status"); err == nil && st.Session {
-			fmt.Fprintln(out, "✓ この画面でも動くようにしました")
+			fmt.Fprintln(out, "✓ 起動ページから「ログインが必要」な操作も押せるようにしました")
 			return 0
 		}
 	}

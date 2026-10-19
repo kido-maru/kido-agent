@@ -12,6 +12,7 @@ import (
 	"kido-agent/internal/boot"
 	"kido-agent/internal/control"
 	"kido-agent/internal/paths"
+	"kido-agent/internal/service"
 )
 
 // cmdStatus は、動いているか・組めているか・ログイン前の設定・操作フォルダの中身を
@@ -25,6 +26,11 @@ func cmdStatus(out io.Writer) int {
 	st, stErr := control.Call("GET", "/control/status")
 	fmt.Fprintf(out, "起動丸エージェント %s\n\n", version)
 	bad := checkPairing(out, st, stErr, hasKey())
+	if stErr == nil && service.HelperMissing(st) {
+		fmt.Fprintln(out, "✗ この画面で操作を動かす役がいません(ログインしていないとみなされます)")
+		fmt.Fprintln(out, "    → kido-agent start で起こせます")
+		bad = true
+	}
 	printBoot(out)
 	fmt.Fprintln(out)
 	if checkActions(out, dir, runtime.GOOS) {

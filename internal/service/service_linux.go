@@ -2,6 +2,10 @@ package service
 
 import "os/exec"
 
+// splitRoles は待ち受け役と手足役が別のプロセスに分かれうるか。
+// 常駐アプリは画面の領域で動く 1 つだけで、手足役は生まれない。
+const splitRoles = false
+
 // Unit は install.sh が置く systemd --user のサービスの名前。
 const Unit = "kido-agent.service"
 

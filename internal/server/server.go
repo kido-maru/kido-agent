@@ -9,6 +9,7 @@ import (
 
 	"kido-agent/internal/actions"
 	"kido-agent/internal/auth"
+	"kido-agent/internal/desktop"
 	"kido-agent/internal/launch"
 )
 
@@ -23,6 +24,7 @@ type agent struct {
 	version     string
 	token       string      // 手元の窓口の合言葉(空なら誰も通さない)
 	osSession   func() bool // 手足役がいなくても OS の決まりでログイン中とみなせるか
+	interactive func() bool // このプロセスがログイン中の画面にいるか(手足役になれるか)
 	now         func() time.Time
 	launch      func(a actions.Action) error
 	launchWait  func(a actions.Action) (int, error) // 終わるまで待ち、終了コードを返す
@@ -44,6 +46,7 @@ func newAgent(keyPath, actionsDir, goos, version string, key []byte) *agent {
 		after:       func(d time.Duration, f func()) { time.AfterFunc(d, f) },
 		logf:        log.Printf,
 		osSession:   loginSession,
+		interactive: desktop.Interactive,
 		stopRequest: make(chan struct{}, 1),
 	}
 	// 組める時間と nonce の失効、手足役がいるかの判断も、テストで差し替えた時計に従わせる。

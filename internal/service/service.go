@@ -10,12 +10,16 @@ import (
 	"time"
 
 	"kido-agent/internal/control"
+	"kido-agent/internal/desktop"
 	"kido-agent/internal/paths"
 )
 
 // Start は常駐アプリを起こし、待ち受け役が応えるまで待つ。
 func Start(out io.Writer) int {
 	if st, err := control.Call("GET", "/control/status"); err == nil {
+		if HelperMissing(st) {
+			return startHelper(out)
+		}
 		fmt.Fprintf(out, "もう動いています(%s)\n", st.Version)
 		return 0
 	}
@@ -29,6 +33,31 @@ func Start(out io.Writer) int {
 	}
 	fmt.Fprintln(out, "✓ 起動しました")
 	return 0
+}
+
+// HelperMissing は、待ち受け役は動いているのに、この画面で操作を動かす役がいないか。
+// Windows で待ち受け役が起動時タスク(画面の無いセッション 0)にいて、手足役が
+// 消えているとき(手足役を止めて入れ直したなど)。次のログインまで直らないので、
+// start で起こし直せるようにする。
+func HelperMissing(st control.Status) bool {
+	return splitRoles && !st.Session && desktop.Interactive()
+}
+
+// startHelper はこの画面に kido-agentd を起こし、手足役として取りに来るまで待つ。
+// 待ち受け役はもう動いているので、起動時タスクには触らない。
+func startHelper(out io.Writer) int {
+	if err := startHere(); err != nil {
+		fmt.Fprintln(out, "✗ 起動できませんでした:", err)
+		return 1
+	}
+	for end := time.Now().Add(5 * time.Second); time.Now().Before(end); time.Sleep(100 * time.Millisecond) {
+		if st, err := control.Call("GET", "/control/status"); err == nil && st.Session {
+			fmt.Fprintln(out, "✓ 起動ページから「ログインが必要」な操作も押せるようにしました")
+			return 0
+		}
+	}
+	fmt.Fprintln(out, "✗ この画面で動く役が起きませんでした。ログ:", logPath())
+	return 1
 }
 
 // Stop は常駐アプリを止める。自動起動の設定は残すので、次のログイン(か

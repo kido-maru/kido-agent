@@ -98,7 +98,8 @@ run = "start.bat"
 今の状態は `kido-agent status` で分かります。
 
 - Windows: 起動時に動くタスクを登録します(登録には管理者の確認 UAC が出ます)。
-  サインイン中はこれまでどおり、ログイン中の画面・窓で操作が動きます
+  サインイン中はこれまでどおり、ログイン中の画面・窓で操作が動きます。
+  サインイン中なのにスマホで「ログインが必要」と出るときは、その画面で `kido-agent start` を打つと直ります
 - Linux(Ubuntu で動作確認): `loginctl enable-linger` を使います。ログインしているかは、
   この利用者に画面のあるログインがあるか(`loginctl` のセッション)で判断します
 - Mac: 起動時のディスクの暗号化(FileVault)がパスワードを求めるため、ログイン前には動かせません
@@ -116,7 +117,7 @@ run = "start.bat"
 | `kido-agent` | 版と、動いているか・組めているかを出し、コマンドの一覧を出す |
 | `kido-agent setup` | 本体と組み(10 分だけ受け付ける)、ログイン前にも使うかを選ぶ。組めていれば組み直すか聞く(組み直すと古い組み合わせは使えなくなる) |
 | `kido-agent status` | 動いているか・組めているか・ログイン前の設定と、操作フォルダを ✓ / ✗(押せない。理由と直し方)/ !(警告)で表示する |
-| `kido-agent start` | 常駐アプリを起こす |
+| `kido-agent start` | 常駐アプリを起こす(動いていても、この画面で操作を動かす役がいなければ起こす) |
 | `kido-agent stop` | 常駐アプリを止める。自動起動は残すので、次のログイン(か `start`)でまた動く |
 | `kido-agent open` | 操作フォルダを開く(無ければ同梱の操作を置いて作る) |
 | `kido-agent uninstall` | 取り除く。`~/KidoButtons` は残す |
@@ -143,6 +144,7 @@ run = "start.bat"
 | `internal/service/` | OS ごとの起こす・止める(start・stop) |
 | `internal/boot/` | ログイン前でも動かす設定 |
 | `internal/uninstall/` | OS ごとの片付け |
+| `internal/desktop/` | ログイン中の画面で動いているか(Windows のセッション) |
 | `internal/paths/` `internal/logfile/` | 置き場所とログ |
 | `install/` | インストールの手順(`install.ps1` `install.sh`) |
 | `ci/` `site/` | CI の道具と、案内のページ |

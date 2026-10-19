@@ -64,12 +64,24 @@ func Serve(version string) int {
 // 待ち受け役が応えるなら手足役(ログイン中の画面で実行する側)。待ち受け役が
 // 消えたら、また窓口を取りに行って待ち受け役になろうとする。
 func runRole(a *agent) int {
+	waiting := false
 	for {
 		ctl, err := net.Listen("tcp", paths.ControlAddr)
 		if err == nil {
 			return runListener(a, ctl)
 		}
 		if _, e := control.Call("GET", "/control/status"); e == nil {
+			if !a.interactive() {
+				// 画面の無いところ(起動時タスク・SSH)で手足役になると、ログイン中と
+				// 言いながら操作が誰にも見えない所で動く。手足役にはならず、待ち受け役が
+				// 消えたら(ログオフなど)代われるよう、窓口を取りに行き続ける。
+				if !waiting {
+					log.Printf("ログイン中の画面ではないので、手足役にはならず待ちます")
+					waiting = true
+				}
+				time.Sleep(standbyPoll)
+				continue
+			}
 			log.Printf("手足役として動きます(別のプロセスが待ち受けています)")
 			if runHelper(a.actionsDir, a.goos) {
 				return 0
@@ -82,6 +94,9 @@ func runRole(a *agent) int {
 		return 1
 	}
 }
+
+// standbyPoll は、手足役になれないプロセスが窓口を取り直しに行く間隔。
+const standbyPoll = 5 * time.Second
 
 // runListener は待ち受け役として、本体の窓口と手元の窓口を開いて待つ。
 func runListener(a *agent, ctl net.Listener) int {

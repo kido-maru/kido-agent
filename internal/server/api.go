@@ -77,7 +77,14 @@ func (a *agent) authorize(w http.ResponseWriter, nonce, sig string, parts ...str
 		writeError(w, http.StatusConflict, "not_paired")
 		return nil
 	}
-	if !fresh || !auth.Verify(key, sig, parts...) {
+	// hello は誰でも叩けるので、LAN の誰かが連打すると正しい相手の nonce も押し出される。
+	// それを「組んでいない」と取り違えないよう、署名違いとは別の印で返す。
+	// nonce は hello で配る公開の値なので、生死を教えても漏れるものは無い。
+	if !fresh {
+		writeError(w, http.StatusUnauthorized, "stale_nonce")
+		return nil
+	}
+	if !auth.Verify(key, sig, parts...) {
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return nil
 	}

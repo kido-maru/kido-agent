@@ -35,6 +35,8 @@ Kido の本体(起動ページからの操作を、同じ LAN の PC に取り�
 - **nonce は常駐アプリが `hello` で出す**。16 バイトの乱数を 16 進にしたもの(32 文字)
   - 1 回きりで、署名の検証に使った時点で(成否を問わず)捨てる
   - 出してから 30 秒で失効する。同時に持つのは 32 個までで、超えたら古いものから捨てる
+  - `hello` は誰でも叩けるので、ほかの誰かが連打すると、使う前の nonce が押し出されることがある。
+    そのときは 401 `stale_nonce` が返る(下)。受けた側は `hello` からやり直してよい
 
 ## エンドポイント
 
@@ -85,7 +87,9 @@ Kido の本体(起動ページからの操作を、同じ LAN の PC に取り�
   `false`)ときに、`require_login` の操作へ付ける。ログイン中は付けない
 - 並びはフォルダ名の昇順
 - 失敗
-  - nonce が無い・失効・署名違い: 401 `{"ok":false,"error":"unauthorized"}`
+  - nonce が無い・失効・押し出された: 401 `{"ok":false,"error":"stale_nonce"}`。
+    鍵は疑わなくてよい。`hello` で新しい nonce を取り直して、もう一度送ってよい
+  - nonce は生きていて署名が違う: 401 `{"ok":false,"error":"unauthorized"}`
   - `paired` でない: 409 `{"ok":false,"error":"not_paired"}`
 
 ### `POST /v1/run`
@@ -103,7 +107,7 @@ Kido の本体(起動ページからの操作を、同じ LAN の PC に取り�
     接続を切ったら、応答は捨てる(動かしたものは止めない)。本体は 3 秒の時間切れより
     長く待たないと、この応答を受け取れない
 - 失敗
-  - 401 unauthorized
+  - 401 stale_nonce・401 unauthorized(`list` と同じ)
   - 409 not_paired
   - 404 `{"ok":false,"error":"unknown_action"}`: その ID の操作が無い
   - 409 `{"ok":false,"error":"broken_action"}`: その操作の設定が壊れている

@@ -56,6 +56,8 @@ KIDO_AGENT_TARBALL=/path/kido-agent-darwin-arm64.tar.gz sh install/install.sh
 フォルダの使いかたを書いた `使いかた.txt` も一緒に置きます(Windows ではメモ帳で開けるよう BOM 付き・CRLF)。
 
 - フォルダ名が操作の ID で、表示名はフォルダ名から先頭の番号と `_` を除いたもの(`50_マイクラ` → `マイクラ`)。並びはフォルダ名の順
+- API の `run` は完全な ID(`10_sleep`)でも、番号を除いた短い名前(`sleep`)でも呼べます。完全な ID が優先です
+- 短い名前が同じ操作が複数あると、一覧ではすべてに `x:1` が付き、短い名前での実行は `broken_action` になります。重複だけなら完全な ID では呼べます。`kido-agent status` が重複と直し方を知らせます
 - 同梱の操作は `10_sleep` `20_lock` `30_restart` `40_shutdown`。10 刻みにしてあるので、間に入れたければ `15_` のように番号を選ぶ
 - フォルダに実行できるファイルを **1 つだけ** 置く
   - Windows: `.lnk` `.bat` `.cmd` `.ps1` `.exe`(`.ps1` は窓を出さずに動かし、ほかはダブルクリックと同じ)
@@ -130,7 +132,13 @@ run = "start.bat"
 
 ## 開発
 
-本体とのやり取りは [PROTOCOL.md](PROTOCOL.md) が取り決めです。これに合わせて作ります。
+v0.2.0 は取り決め v2 に対応します。本体とのやり取りは [PROTOCOL.md](PROTOCOL.md) が正本です。
+`hello` は `v:2`、一覧は `v` と `a`、各操作は `id`・`n`・`ic`・`cf`・`x`・`l` を返します。
+`ic` は無ければ省き、`cf`・`x`・`l` は真のときだけ数値の `1` を付けます。
+一覧の版を次の `list` に渡すと、同じなら `{"v":"…","same":1}` だけを返します。
+`run` の返事にも同じ決まりの版を付けます(`wait = true` の終了結果にも付きます)。
+要求の署名の材料は変えず、`list` の要求の `v` は含めません。`list` と `run` の 200 応答は本文に署名します。
+URL の `/v1/` と `kido.toml` の長いキー名はそのままです。一覧の古い形は返しません。
 
 | 場所 | 中身 |
 |---|---|
@@ -173,7 +181,7 @@ pwsh ci/package-windows.ps1 -Version dev -Arch amd64 -Out dist
 `v` で始まるタグを push すると、`release.yml` が 6 つの成果物(Windows は zip、Mac・Linux は tar.gz)と `SHA256SUMS` を GitHub Releases に上げます。
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.2.0 && git push origin v0.2.0
 ```
 
 ### 案内のページ

@@ -52,7 +52,7 @@ func (ta *testAgent) hello(t *testing.T) (state, nonce string) {
 		State string `json:"state"`
 		Nonce string `json:"nonce"`
 	}
-	if err := json.Unmarshal([]byte(res.body), &v); err != nil || v.V != 1 {
+	if err := json.Unmarshal([]byte(res.body), &v); err != nil || v.V != 2 {
 		t.Fatalf("hello: %s", res.body)
 	}
 	return v.State, v.Nonce
@@ -110,7 +110,7 @@ func TestListSigned(t *testing.T) {
 	if res.status != 200 {
 		t.Fatalf("%+v", res)
 	}
-	want := `{"actions":[{"id":"10_sleep","name":"sleep"},{"id":"50_Game","name":"Game","broken":true}]}`
+	want := `{"v":"6f4bdb49","a":[{"id":"10_sleep","n":"sleep"},{"id":"50_Game","n":"Game","x":1}]}`
 	if res.body != want {
 		t.Fatalf("本文:\n%s", res.body)
 	}

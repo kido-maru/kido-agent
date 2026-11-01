@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"runtime"
+	"strings"
 
 	"kido-agent/internal/actions"
 	"kido-agent/internal/auth"
@@ -121,7 +122,7 @@ func checkActions(out io.Writer, dir, goos string) (bad bool) {
 		fmt.Fprintln(out, "! 操作がありません。~/KidoButtons にフォルダを作り、ショートカットやスクリプトを置いてください")
 	}
 	warnSameShortName(out, list)
-	if _, sent := actions.ListBody(list, true); sent < valid {
+	if _, sent := actions.ListBody(list, true, ""); sent < valid {
 		fmt.Fprintf(out, "! 本体に送れるのは先頭の %d 個までです(%d 個まで・合わせて %d バイトまで)。残りは表示されません\n",
 			sent, actions.MaxActions, actions.MaxBodyBytes)
 	}
@@ -129,19 +130,17 @@ func checkActions(out io.Writer, dir, goos string) (bad bool) {
 }
 
 // warnSameShortName は、番号を除くと同じ名前になる操作を知らせる。ショートカットなどほかのアプリからは
-// その名前で操作を呼ぶので、後ろのものは名前では動かせない(先のものが動く)。
+// その名前で操作を呼ぶので、別の操作を押す前に重複を解消してもらう。
 func warnSameShortName(out io.Writer, list []actions.Action) {
-	first := map[string]string{}
+	duplicates := actions.DuplicateShortNames(list)
 	for _, a := range list {
 		if a.Invalid != "" {
 			continue
 		}
 		name := actions.ShortName(a.ID)
-		if prev, ok := first[name]; ok {
-			fmt.Fprintf(out, "! %s と %s は、番号を除くと同じ名前(%s)です。名前で呼ぶと %s が動きます\n    → どちらかのフォルダ名を変えてください\n",
-				prev, a.ID, name, prev)
-			continue
+		if ids := duplicates[name]; len(ids) > 1 && ids[0] == a.ID {
+			fmt.Fprintf(out, "! %s は、番号を除くと同じ名前(%s)です。短い名前では呼べません(完全な ID なら呼べます)\n    → フォルダ名を変えてください\n",
+				strings.Join(ids, " と "), name)
 		}
-		first[name] = a.ID
 	}
 }

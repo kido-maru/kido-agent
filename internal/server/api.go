@@ -35,7 +35,7 @@ func (a *agent) handleHello(w http.ResponseWriter, r *http.Request) {
 		State   string `json:"state"`
 		Nonce   string `json:"nonce"`
 		Session bool   `json:"session"` // 誰かがログインしているとみなせるか(sessionActive)
-	}{1, a.pairing.State(), nonce, a.sessionActive()})
+	}{2, a.pairing.State(), nonce, a.sessionActive()})
 	writeBody(w, http.StatusOK, body, "")
 }
 

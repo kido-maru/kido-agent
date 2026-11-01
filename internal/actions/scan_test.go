@@ -139,7 +139,7 @@ func TestIDRules(t *testing.T) {
 	if a := scanOne(t, root, "windows"); a.Invalid == "" {
 		t.Fatal("長すぎる ID は送らない")
 	}
-	if body, _ := ListBody([]Action{{ID: "x", Invalid: "bad"}}, true); string(body) != `{"actions":[]}` {
+	if body, _ := ListBody([]Action{{ID: "x", Invalid: "bad"}}, true, ""); string(body) != `{"v":"4f53cda1","a":[]}` {
 		t.Fatal(string(body))
 	}
 }
@@ -202,3 +202,50 @@ func TestScreenWarningWithoutRequireLogin(t *testing.T) {
 }
 
 func contains(s, sub string) bool { return strings.Contains(s, sub) }
+
+func TestFindShortNameAndExactID(t *testing.T) {
+	root := t.TempDir()
+	mkAction(t, root, "10_sleep", "sleep.ps1")
+	for _, id := range []string{"10_sleep", "sleep"} {
+		if a, found := Find(root, "windows", id); !found || a.ID != "10_sleep" || a.Broken {
+			t.Fatalf("%s: found=%v %+v", id, found, a)
+		}
+	}
+	mkAction(t, root, "20_sleep", "sleep.ps1")
+	a, found := Find(root, "windows", "sleep")
+	if !found || a.ID != "10_sleep" || !a.Broken {
+		t.Fatalf("同じ短い名前は先の操作を選ぶが断る: found=%v %+v", found, a)
+	}
+	for _, id := range []string{"10_sleep", "20_sleep"} {
+		if a, found := Find(root, "windows", id); !found || a.Broken || a.ID != id {
+			t.Fatalf("完全な ID なら動かせる: found=%v %+v", found, a)
+		}
+	}
+	mkAction(t, root, "sleep", "exact.ps1")
+	if a, found := Find(root, "windows", "sleep"); !found || a.ID != "sleep" || a.Broken {
+		t.Fatalf("完全な ID が短い名前より優先: found=%v %+v", found, a)
+	}
+	for _, id := range []string{"missing", "../10_sleep", "Sleep"} {
+		if a, found := Find(root, "windows", id); found {
+			t.Fatalf("存在しない名前: %s %+v", id, a)
+		}
+	}
+}
+
+func TestFindSkipsInvalidAndIgnoresLimits(t *testing.T) {
+	list := []Action{{ID: "10_sleep", Invalid: "bad"}, {ID: "20_sleep"}}
+	if a, found := FindIn(list, "sleep"); !found || a.ID != "20_sleep" || a.Broken {
+		t.Fatalf("不正な ID は重複にも数えない: found=%v %+v", found, a)
+	}
+	if _, found := FindIn(list, "10_sleep"); found {
+		t.Fatal("不正な ID は完全一致でも動かせない")
+	}
+	root := t.TempDir()
+	for i := 0; i < MaxActions; i++ {
+		mkAction(t, root, strings.Repeat("a", i+1), "a.ps1")
+	}
+	mkAction(t, root, "zz_tail", "a.ps1")
+	if a, found := Find(root, "windows", "zz_tail"); !found || a.Broken {
+		t.Fatalf("一覧から落ちても動かせる: found=%v %+v", found, a)
+	}
+}

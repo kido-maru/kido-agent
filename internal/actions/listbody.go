@@ -2,51 +2,78 @@ package actions
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 )
 
 type wireAction struct {
 	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Icon    string `json:"icon,omitempty"`
-	Confirm bool   `json:"confirm,omitempty"`
-	Broken  bool   `json:"broken,omitempty"`
-	// Login は「今は押せない(ログインが要る)」印。手足役がいないときに、
-	// require_login の操作へ付ける。手足役がいれば付けない。
-	Login bool `json:"login,omitempty"`
+	Name    string `json:"n"`
+	Icon    string `json:"ic,omitempty"`
+	Confirm int    `json:"cf,omitempty"`
+	Broken  int    `json:"x,omitempty"`
+	Login   int    `json:"l,omitempty"`
 }
 
-// ListBody は本体へ送る一覧の本文を作る。数の上限を超えた分と、本文が
-// 4096 バイトに収まらない分は後ろから落とす。sent は実際に載せた数。
-// sessionActive が false(誰もログインしていない)なら、require_login の
-// 操作に「login」の印を付ける。
-func ListBody(actions []Action, sessionActive bool) (body []byte, sent int) {
-	var wire []wireAction
+// wireList は一覧と版で同じ省略の決まりを使うための形。重複の判定は切る前に行い、
+// 後ろの同名操作が一覧から落ちても、短い名前で押せないことを知らせる。
+func wireList(actions []Action, sessionActive bool) []wireAction {
+	wire := make([]wireAction, 0, len(actions))
+	duplicates := DuplicateShortNames(actions)
 	for _, a := range actions {
 		if a.Invalid != "" {
 			continue
 		}
-		login := !sessionActive && a.RequireLogin
 		wire = append(wire, wireAction{ID: a.ID, Name: a.Name, Icon: a.Icon,
-			Confirm: a.Confirm, Broken: a.Broken, Login: login})
+			Confirm: mark(a.Confirm), Broken: mark(a.Broken || len(duplicates[ShortName(a.ID)]) > 1),
+			Login: mark(!sessionActive && a.RequireLogin)})
+	}
+	return wire
+}
+
+func mark(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
+}
+
+// ListVersion は切り詰める前の短い鍵の配列から版を作る。list と run で共有し、
+// 本文から落ちた操作の変更や、ログイン状態による l の変化も見逃さないようにする。
+func ListVersion(actions []Action, sessionActive bool) string {
+	return listVersion(wireList(actions, sessionActive))
+}
+
+func listVersion(wire []wireAction) string {
+	sum := sha256.Sum256(EncodeJSON(wire))
+	return hex.EncodeToString(sum[:4])
+}
+
+// ListBody は版が同じなら小さな返事だけを返す。違えば、数と本文の上限に
+// 収まるまで後ろから落とす。sent は実際に載せた数(same のときは 0)。
+func ListBody(actions []Action, sessionActive bool, knownVersion string) (body []byte, sent int) {
+	wire := wireList(actions, sessionActive)
+	version := listVersion(wire)
+	if knownVersion == version {
+		return EncodeJSON(struct {
+			Version string `json:"v"`
+			Same    int    `json:"same"`
+		}{version, 1}), 0
 	}
 	if len(wire) > MaxActions {
 		wire = wire[:MaxActions]
 	}
 	for {
-		body = EncodeJSON(map[string]any{"actions": nonNil(wire)})
+		body = EncodeJSON(struct {
+			Version string       `json:"v"`
+			Actions []wireAction `json:"a"`
+		}{version, wire})
 		if len(body) <= MaxBodyBytes || len(wire) == 0 {
 			return body, len(wire)
 		}
 		wire = wire[:len(wire)-1]
 	}
-}
-
-func nonNil(w []wireAction) []wireAction {
-	if w == nil {
-		return []wireAction{} // 空でも null ではなく [] を送る
-	}
-	return w
 }
 
 // EncodeJSON は署名する本文を作る。HTML 向けのエスケープ(< を < にする等)は

@@ -60,7 +60,7 @@ func TestExecuteWaitFallsBackWhenHelperGone(t *testing.T) {
 	}
 	_, n := ta.hello(t)
 	r := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "90_build"))
-	if r.body != `{"ok":false,"err":"exit","code":4}` || len(ta.launched) != 1 {
+	if r.body != versionedRunBody(t, ta, `{"ok":false,"err":"exit","code":4}`) || len(ta.launched) != 1 {
 		t.Fatalf("手足役がいなければ待ち受け役が待って動かす: %+v %v", r, ta.launched)
 	}
 

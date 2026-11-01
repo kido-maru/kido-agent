@@ -124,3 +124,13 @@ func waitLog(t *testing.T, logs chan string, want string) {
 		}
 	}
 }
+
+// versionedRunBody は、既存の実行結果の項目をそのまま保っているか確かめるための期待値。
+func versionedRunBody(t *testing.T, ta *testAgent, body string) string {
+	t.Helper()
+	list, err := actions.Scan(ta.actionsDir, ta.goos)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.TrimSuffix(body, "}") + `,"v":"` + actions.ListVersion(list, ta.sessionActive()) + `"}`
+}

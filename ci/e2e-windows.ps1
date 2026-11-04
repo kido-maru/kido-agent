@@ -52,19 +52,19 @@ try {
     (python ci/hub_stub.py list) | Tee-Object -Variable listOut | Write-Host
     if ($lsess -contains 0) {
         Assert ($helloOut -match '"session": false') 'セッション 0 で手足役がいないのに session が true'
-        Assert ($listOut -match '"id":"90_bat".*"login":true') 'login の印が無い'
+        Assert ($listOut -match '"id":"90_bat"[^}]*"l":1') 'l の印が無い'
         (python ci/hub_stub.py run 90_bat) | Tee-Object -Variable runOut | Write-Host
         Assert ($runOut -match 'needs_login') '手足役なしで needs_login にならない'
         Assert (-not (Test-Path "$env:TEMP\kido-ci-bat.txt")) 'ログインなしで動いてしまった'
     } else {
         Assert ($helloOut -match '"session": true') 'ログイン中の画面の待ち受け役なのに session が false'
-        Assert (-not ($listOut -match '"id":"90_bat"[^}]*"login":true')) 'ログイン中なのに login の印が付いた'
+        Assert (-not ($listOut -match '"id":"90_bat"[^}]*"l":1')) 'ログイン中なのに l の印が付いた'
         python ci/hub_stub.py run 90_bat; Assert ($LASTEXITCODE -eq 0) 'run 90_bat(ログイン中の待ち受け役)'
         Start-Sleep 3
         Assert (Test-Path "$env:TEMP\kido-ci-bat.txt") 'ログイン中の待ち受け役が require_login の操作を動かさない'
         Remove-Item "$env:TEMP\kido-ci-bat.txt"
     }
-    Assert (-not ($listOut -match '"id":"92_free"[^}]*"login":true')) '設定なしの操作に login が付いた'
+    Assert (-not ($listOut -match '"id":"92_free"[^}]*"l":1')) '設定なしの操作に l が付いた'
     python ci/hub_stub.py run 92_free; Assert ($LASTEXITCODE -eq 0) 'run 92_free(ログインなし)'
     Start-Sleep 3
     Assert (Test-Path "$env:TEMP\kido-ci-free.txt") '設定なしの操作がログインなしで動いていない'

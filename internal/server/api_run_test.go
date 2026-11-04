@@ -26,7 +26,7 @@ func TestRunExecutesAfterReply(t *testing.T) {
 	ta.after = func(d time.Duration, f func()) { order = append(order, "scheduled"); after(d, f) }
 	_, n := ta.hello(t)
 	res := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "10_sleep"))
-	if res.status != 200 || res.body != `{"ok":true}` || res.sig != auth.Sign(testKey, "run-ok", n, res.body) {
+	if res.status != 200 || res.body != versionedRunBody(t, ta, `{"ok":true}`) || res.sig != auth.Sign(testKey, "run-ok", n, res.body) {
 		t.Fatalf("%+v", res)
 	}
 	if strings.Join(order, ",") != "scheduled,launch" || ta.delays[0] < 300*time.Millisecond {
@@ -68,7 +68,7 @@ func TestRunErrors(t *testing.T) {
 
 func TestListLimits(t *testing.T) {
 	ta := pairedAgent(t)
-	ta.setLoggedIn(true) // login の印が入らない状態で切り詰めだけを見る
+	ta.setLoggedIn(true) // l の印が入らない状態で切り詰めだけを見る
 	for i := 0; i < 30; i++ {
 		d := mkAction(t, ta.actionsDir, fmt.Sprintf("%02d_%s", i, strings.Repeat("x", 50)), "a.bat")
 		writeFile(t, d+"/kido.toml", "name = \""+strings.Repeat("名", 40)+"\"\nconfirm = true\nicon = \""+strings.Repeat("a", 40)+"\"\n")
@@ -81,11 +81,11 @@ func TestListLimits(t *testing.T) {
 	if res.sig != auth.Sign(testKey, "list-ok", n, res.body) {
 		t.Fatal("切り詰めた後の本文に署名する")
 	}
-	if !strings.Contains(res.body, `"name":"`+strings.Repeat("名", 32)+`"`) {
+	if !strings.Contains(res.body, `"n":"`+strings.Repeat("名", 32)+`"`) {
 		t.Fatal("名前は 32 文字に切る")
 	}
 	list, _ := actions.Scan(ta.actionsDir, ta.goos)
-	body, sent := actions.ListBody(list, true)
+	body, sent := actions.ListBody(list, true, "")
 	if sent == 0 || sent >= actions.MaxActions || string(body) != res.body {
 		t.Fatalf("sent=%d", sent)
 	}
@@ -144,18 +144,18 @@ func TestHelloAndListSessionFlag(t *testing.T) {
 	mkAction(t, ta.actionsDir, "20_lock", "lock.ps1")
 	writeFile(t, ta.actionsDir+"/20_lock/kido.toml", "require_login = true\n")
 
-	// ログインしていない: hello の session は false、list の 20_lock に login
+	// ログインしていない: hello の session は false、list の 20_lock に l
 	res := call(t, ta.apiHandler(), "GET", "/v1/hello", "")
 	if !strings.Contains(res.body, `"session":false`) {
 		t.Fatalf("session false のはず: %s", res.body)
 	}
 	_, n := ta.hello(t)
 	lr := call(t, ta.apiHandler(), "POST", "/v1/list", listReq(n, auth.Sign(testKey, "list", n)))
-	if !strings.Contains(lr.body, `"id":"20_lock","name":"lock","login":true`) {
-		t.Fatalf("require_login の操作に login が要る: %s", lr.body)
+	if !strings.Contains(lr.body, `"id":"20_lock","n":"lock","l":1`) {
+		t.Fatalf("require_login の操作に l が要る: %s", lr.body)
 	}
-	if strings.Contains(lr.body, `"id":"10_sleep","name":"sleep","login":true`) {
-		t.Fatalf("設定なしの操作に login は付けない: %s", lr.body)
+	if strings.Contains(lr.body, `"id":"10_sleep","n":"sleep","l":1`) {
+		t.Fatalf("設定なしの操作に l は付けない: %s", lr.body)
 	}
 
 	// ログイン中: session true、login は付かない
@@ -166,8 +166,8 @@ func TestHelloAndListSessionFlag(t *testing.T) {
 	}
 	_, n = ta.hello(t)
 	lr = call(t, ta.apiHandler(), "POST", "/v1/list", listReq(n, auth.Sign(testKey, "list", n)))
-	if strings.Contains(lr.body, `"login":true`) {
-		t.Fatalf("ログイン中は login を付けない: %s", lr.body)
+	if strings.Contains(lr.body, `"l":1`) {
+		t.Fatalf("ログイン中は l を付けない: %s", lr.body)
 	}
 }
 
@@ -183,8 +183,8 @@ func TestRunRequireLoginWithOSSessionNoHelper(t *testing.T) {
 	}
 	_, n := ta.hello(t)
 	lr := call(t, ta.apiHandler(), "POST", "/v1/list", listReq(n, auth.Sign(testKey, "list", n)))
-	if strings.Contains(lr.body, `"login":true`) {
-		t.Fatalf("ログイン中は login を付けない: %s", lr.body)
+	if strings.Contains(lr.body, `"l":1`) {
+		t.Fatalf("ログイン中は l を付けない: %s", lr.body)
 	}
 	_, n = ta.hello(t)
 	r := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "20_lock"))

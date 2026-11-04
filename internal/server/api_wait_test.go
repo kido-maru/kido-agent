@@ -37,7 +37,7 @@ func TestRunWaitReportsExitCode(t *testing.T) {
 		}
 		_, n := ta.hello(t)
 		r := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "90_build"))
-		if r.status != 200 || r.body != c.body || r.sig != auth.Sign(testKey, "run-ok", n, r.body) {
+		if r.status != 200 || r.body != versionedRunBody(t, ta, c.body) || r.sig != auth.Sign(testKey, "run-ok", n, r.body) {
 			t.Errorf("code=%d: %+v", c.code, r)
 		}
 		// 待つ操作は、返事の後に遅らせて動かす道(after)を通らない
@@ -55,7 +55,7 @@ func TestRunWithoutWaitDoesNotWait(t *testing.T) {
 	ta.after = func(time.Duration, func()) { scheduled = true } // 動かすのは返事の後
 	_, n := ta.hello(t)
 	r := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "10_sleep"))
-	if r.body != `{"ok":true}` || !scheduled || len(ta.launched) != 0 {
+	if r.body != versionedRunBody(t, ta, `{"ok":true}`) || !scheduled || len(ta.launched) != 0 {
 		t.Fatalf("返事が先: %+v scheduled=%v launched=%v", r, scheduled, ta.launched)
 	}
 }
@@ -81,7 +81,7 @@ func TestRunWaitViaHelper(t *testing.T) {
 	}()
 	_, n := ta.hello(t)
 	r := call(t, ta.apiHandler(), "POST", "/v1/run", runReq(n, "90_build"))
-	if r.body != `{"ok":false,"err":"exit","code":5}` || len(ta.launched) != 0 {
+	if r.body != versionedRunBody(t, ta, `{"ok":false,"err":"exit","code":5}`) || len(ta.launched) != 0 {
 		t.Fatalf("手足役の終了コードを返す: %+v", r)
 	}
 }
@@ -93,7 +93,7 @@ func TestRunWaitOutlivesServerTimeouts(t *testing.T) {
 	base := serveReal(t, ta)
 	_, n := ta.hello(t)
 	body, err := postRun(base, n, "90_build", 5*time.Second)
-	if err != nil || body != `{"ok":false,"err":"exit","code":2}` {
+	if err != nil || body != versionedRunBody(t, ta, `{"ok":false,"err":"exit","code":2}`) {
 		t.Fatalf("%q %v", body, err)
 	}
 }

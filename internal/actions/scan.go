@@ -65,12 +65,45 @@ func Scan(dir, goos string) ([]Action, error) {
 // 一覧から切り詰めて落ちた操作も、ID が分かっていれば動かせてよい。
 func Find(dir, goos, id string) (Action, bool) {
 	list, _ := Scan(dir, goos)
+	return FindIn(list, id)
+}
+
+// FindIn は読み取った一覧から探す。run の実行対象と版に、同じ一覧を使うため。
+// 完全な ID を先に探し、短い名前が重複していれば別の操作を押さないよう断る。
+func FindIn(list []Action, id string) (Action, bool) {
 	for _, x := range list {
 		if x.ID == id && x.Invalid == "" {
 			return x, true
 		}
 	}
+	duplicates := DuplicateShortNames(list)
+	for _, x := range list {
+		if x.Invalid == "" && ShortName(x.ID) == id {
+			if len(duplicates[id]) > 1 {
+				x.fail("番号を除くと同じ名前の操作があります", "完全な ID で呼ぶか、フォルダ名を変えてください")
+			}
+			return x, true
+		}
+	}
 	return Action{}, false
+}
+
+// DuplicateShortNames は有効な ID だけで同名を調べる。一覧・実行・status が
+// 同じ判定を使い、切り詰めた一覧で見えない重複も知らせられるようにする。
+func DuplicateShortNames(list []Action) map[string][]string {
+	names := map[string][]string{}
+	for _, a := range list {
+		if a.Invalid == "" {
+			name := ShortName(a.ID)
+			names[name] = append(names[name], a.ID)
+		}
+	}
+	for name, ids := range names {
+		if len(ids) < 2 {
+			delete(names, name)
+		}
+	}
+	return names
 }
 
 func loadAction(dir, goos string) Action {

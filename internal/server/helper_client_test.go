@@ -17,6 +17,7 @@ func TestExecJobResolvesOwnFolder(t *testing.T) {
 	l := mkAction(t, root, "20_lock", "lock.ps1")
 	writeFile(t, filepath.Join(l, "kido.toml"), "require_login = true\n")
 	mkAction(t, root, "50_game", "a.bat", "b.bat") // 2 つあって押せない
+	mkAction(t, root, "70_60_old", "old.ps1")
 
 	var ran []string
 	run := func(dir, file string) error { ran = append(ran, filepath.Join(dir, file)); return nil }
@@ -52,6 +53,8 @@ func TestExecJobResolvesOwnFolder(t *testing.T) {
 		{helperJob{ID: "x#5", Action: "90_build"}, "食い違って"},
 		{helperJob{ID: "x#6", Action: "20_lock"}, "食い違って"},
 		{helperJob{ID: "x#7", Action: "10_sleep", RequireLogin: true}, "食い違って"},
+		{helperJob{ID: "x#8", Action: "sleep"}, "見つかりません"},
+		{helperJob{ID: "x#9", Action: "60_old"}, "見つかりません"},
 	}
 	for _, c := range bad {
 		if _, err := execJob(root, "windows", c.job, run, runWait); err == nil || !strings.Contains(err.Error(), c.want) {

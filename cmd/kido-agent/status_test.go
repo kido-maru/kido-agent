@@ -49,7 +49,7 @@ func TestCheckActionsSameShortName(t *testing.T) {
 	var out bytes.Buffer
 	checkActions(&out, root, "windows")
 	s := out.String()
-	if !strings.Contains(s, "10_sleep と 20_sleep は、番号を除くと同じ名前(sleep)") || strings.Contains(s, "30_lock と") {
+	if !strings.Contains(s, "10_sleep と 20_sleep は、番号を除くと同じ名前(sleep)") || strings.Contains(s, "30_lock と") || !strings.Contains(s, "短い名前では呼べません(完全な ID なら呼べます)") || strings.Contains(s, "名前で呼ぶと") {
 		t.Fatal(s)
 	}
 }

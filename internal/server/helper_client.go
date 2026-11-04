@@ -75,7 +75,9 @@ func execJob(dir, goos string, job helperJob,
 	run func(dir, file string) error, runWait func(dir, file string) (int, error)) (int, error) {
 	t, found := actions.Find(dir, goos, job.Action)
 	switch {
-	case !found:
+	case !found || t.ID != job.Action:
+		// 渡された仕事は、すでに完全な ID に引き直してある。実行前にフォルダが
+		// 変わっても、短い名前への読み替えで別の操作を動かしてはいけない。
 		return 0, errors.New("操作が見つかりません: " + job.Action)
 	case t.Broken:
 		return 0, errors.New("押せない操作です: " + job.Action)

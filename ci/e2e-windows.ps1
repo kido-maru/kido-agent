@@ -147,7 +147,7 @@ try {
     }
     Assert ($log -match '普通のユーザー') 'ログに権限降格(普通のユーザー)が見えない'
     # ログの文言だけでなく、実際にプロセスの整合性レベルが Medium まで下がっている
-    # ことを確かめる(SAFER だけだと High のまま残る)。
+    # ことを確かめる。
     Add-Type -Namespace K -Name Tok -MemberDefinition @'
 [DllImport("advapi32.dll",SetLastError=true)] public static extern bool OpenProcessToken(IntPtr h,uint acc,out IntPtr tok);
 [DllImport("advapi32.dll",SetLastError=true)] public static extern bool GetTokenInformation(IntPtr tok,int cls,IntPtr buf,int len,out int need);
@@ -170,6 +170,20 @@ try {
     Write-Host ("kido-agentd の整合性レベル: " + ($levels -join ', '))
     Assert (($levels -contains 'Medium') -and -not ($levels -contains 'High')) "権限が Medium まで下がっていない: $levels"
     Write-Host '✓ S4U タスクが Medium(普通のユーザー)の整合性で動いていることを確認'
+    # 権限を下げても、スリープ・再起動・シャットダウンに要る権限は残っていて、
+    # 管理者の権限は無いこと。待ち受け役が自分で動かす操作の中から確かめる。
+    New-Item -ItemType Directory "$kido\95_priv" | Out-Null
+    Set-Content "$kido\95_priv\priv.bat" "whoami /priv /fo csv > `"%TEMP%\kido-ci-priv.txt`"" -Encoding ASCII
+    Remove-Item "$env:TEMP\kido-ci-priv.txt" -ErrorAction SilentlyContinue
+    python ci/hub_stub.py run 95_priv; Assert ($LASTEXITCODE -eq 0) 'run 95_priv(セッション 0 の待ち受け役)'
+    foreach ($i in 1..50) {
+        if ((Test-Path "$env:TEMP\kido-ci-priv.txt") -and (Get-Item "$env:TEMP\kido-ci-priv.txt").Length) { break }
+        Start-Sleep -Milliseconds 200
+    }
+    $priv = Get-Content -Raw "$env:TEMP\kido-ci-priv.txt"
+    Assert ($priv -match 'SeShutdownPrivilege') "待ち受け役に SeShutdownPrivilege が無い: $priv"
+    Assert ($priv -notmatch 'SeDebugPrivilege') "待ち受け役に管理者の権限が残っている: $priv"
+    Write-Host '✓ 待ち受け役に SeShutdownPrivilege があり、管理者の権限が無いことを確認'
     # 起動時タスクの待ち受け役(セッション 0)に、ランナーの側から 2 つ目を起こすと
     # 手足役になり、require_login の操作はそちらを経て動く。
     Start-Process -FilePath "$dest\kido-agentd.exe" -WorkingDirectory $dest

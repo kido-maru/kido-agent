@@ -2,6 +2,9 @@
 #
 #   irm https://pc.kido.page/install.ps1 | iex
 #
+# 版を決めて入れるとき(既定は最新のリリース):
+#   $env:KIDO_AGENT_VERSION = "v0.2.1"; irm https://pc.kido.page/install.ps1 | iex
+#
 # 手元の zip やフォルダから入れるとき(リリース前の確かめなど):
 #   $env:KIDO_AGENT_ZIP = "C:\path\kido-agent-windows-amd64.zip"
 #   Get-Content -Raw -Encoding UTF8 .\install\install.ps1 | iex
@@ -43,7 +46,12 @@ function Get-Arch {
 function Get-Package([string]$Work) {
     $src = $From
     if (-not $src) {
-        $url = "https://pc.kido.page/dl/kido-agent-windows-$(Get-Arch).zip"
+        # 配る物は GitHub Releases から直接落とす(ページの更新とは別に、リリースだけで版が決まる)。
+        # 版を決めたいときは $env:KIDO_AGENT_VERSION = "v0.2.1" のように渡す
+        $ver = $env:KIDO_AGENT_VERSION
+        $base = if ($ver) { "https://github.com/kido-maru/kido-agent/releases/download/$ver" }
+                else { 'https://github.com/kido-maru/kido-agent/releases/latest/download' }
+        $url = "$base/kido-agent-windows-$(Get-Arch).zip"
         Write-Host "ダウンロードしています: $url"
         $src = Join-Path $Work 'kido-agent.zip'
         try { Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $src }

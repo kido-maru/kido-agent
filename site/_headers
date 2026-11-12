@@ -6,6 +6,3 @@
 /install.sh
   Content-Type: text/plain; charset=utf-8
   Cache-Control: no-cache
-# 配る物は版が変わっても同じ名前なので、古いものを掴ませない
-/dl/*
-  Cache-Control: no-cache

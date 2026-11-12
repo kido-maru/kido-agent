@@ -3,6 +3,9 @@
 #
 #   curl -fsSL https://pc.kido.page/install.sh | sh
 #
+# 版を決めて入れるとき(既定は最新のリリース):
+#   curl -fsSL https://pc.kido.page/install.sh | KIDO_AGENT_VERSION=v0.2.1 sh
+#
 # 手元の tar.gz(またはそれを展開したフォルダ)から入れるとき(リリース前の確かめなど):
 #   KIDO_AGENT_TARBALL=/path/kido-agent-darwin-arm64.tar.gz sh install/install.sh
 #
@@ -35,11 +38,22 @@ detect() {
 	esac
 }
 
+# 配る物は GitHub Releases から直接落とす(ページの更新とは別に、リリースだけで版が決まる)。
+# 版を決めたいときは KIDO_AGENT_VERSION=v0.2.1 のように渡す。
+RELEASES="https://github.com/kido-maru/kido-agent/releases"
+release_url() {
+	if [ -n "${KIDO_AGENT_VERSION:-}" ]; then
+		printf '%s/download/%s' "$RELEASES" "$KIDO_AGENT_VERSION"
+	else
+		printf '%s/latest/download' "$RELEASES"
+	fi
+}
+
 # fetch は入手元から実行ファイルを取り出し、$work/kido-agent に置く。
 fetch() {
 	src="${KIDO_AGENT_TARBALL:-}"
 	if [ -z "$src" ]; then
-		url="https://pc.kido.page/dl/kido-agent-$os-$arch.tar.gz"
+		url="$(release_url)/kido-agent-$os-$arch.tar.gz"
 		say "ダウンロードしています: $url"
 		curl -fsSL "$url" -o "$work/pkg.tar.gz" ||
 			die "ダウンロードできませんでした"

@@ -10,9 +10,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      # 手順の if から secrets は直接見えないので、有無だけ env に写す
-      HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -27,11 +24,4 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes \
             dist/*.zip dist/*.tar.gz dist/SHA256SUMS
-      # 配布のページにも同じ物を載せる。トークンが無い間(手元から出している間)は飛ばす。
-      # 出し先を変えるときは、リポジトリの変数 KIDO_SITE_DOMAIN・KIDO_SITE_NAME を設定する
-      - name: deploy site
-        if: env.HAS_CF_TOKEN == 'true'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: sh ci/deploy-site.sh "${{ vars.KIDO_SITE_DOMAIN || 'pc.kido.page' }}" "${{ vars.KIDO_SITE_NAME || 'kido-agent-site' }}"
+      # 配る物は GitHub Releases が置き場。案内のページ(入れ方のスクリプト)はこのリリースでは出さない

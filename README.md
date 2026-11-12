@@ -178,7 +178,8 @@ git tag v0.1.0 && git push origin v0.1.0
 
 ### 案内のページ
 
-`site/` と入れ方のスクリプト、配る物(zip・tar.gz)を、まとめて Cloudflare Workers(`pc.kido.page`)に出します。
-出すのはタグを打ったリリースのときで、`release.yml` が GitHub のリリースと同じ物を載せます(secret の `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID` が要る)。
+`site/` と入れ方のスクリプト(`install/`)を、Cloudflare Workers の静的ファイルとして `pc.kido.page` に出します。
+配る物(zip・tar.gz)はここに載せません。入れ方のスクリプトが GitHub Releases の最新のリリースから直接落とします
+(版を決めるときは `KIDO_AGENT_VERSION=v0.2.1` を渡す)。リリースを切らなくても、ページだけを出し直せます。
 入れ方のスクリプトは `install/` のものを写し、中の `https://pc.kido.page` を出し先の URL に書き換えます。
-手元から出すときは `sh ci/build-dist.sh <版>` のあと `sh ci/deploy-site.sh [ドメイン 名前]`(wrangler のログインが要る)。
+手元から出すときは `sh ci/deploy-site.sh [ドメイン 名前]`(wrangler のログインが要る)。

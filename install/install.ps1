@@ -1,9 +1,9 @@
 # 起動丸エージェントを Windows に入れる(入れ直し・更新にも使える)。
 #
-#   irm https://pc.kido.page/install.ps1 | iex
+#   irm https://github.com/kido-maru/kido-agent/releases/latest/download/install.ps1 | iex
 #
 # 版を決めて入れるとき(既定は最新のリリース):
-#   $env:KIDO_AGENT_VERSION = "v0.2.1"; irm https://pc.kido.page/install.ps1 | iex
+#   $env:KIDO_AGENT_VERSION = "v0.2.2"; irm https://github.com/kido-maru/kido-agent/releases/download/v0.2.2/install.ps1 | iex
 #
 # 手元の zip やフォルダから入れるとき(リリース前の確かめなど):
 #   $env:KIDO_AGENT_ZIP = "C:\path\kido-agent-windows-amd64.zip"
@@ -246,7 +246,9 @@ try {
     if (-not $Main.Contains([string][char]0x8D77)) {
         if ($Decoded) { throw 'install.ps1: failed to read as UTF-8' }
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-        $bytes = (New-Object Net.WebClient).DownloadData('https://pc.kido.page/install.ps1')
+        # Fetch this script again from the release (the same version when one is pinned)
+        $self = if ($env:KIDO_AGENT_VERSION) { "https://github.com/kido-maru/kido-agent/releases/download/$($env:KIDO_AGENT_VERSION)/install.ps1" } else { 'https://github.com/kido-maru/kido-agent/releases/latest/download/install.ps1' }
+        $bytes = (New-Object Net.WebClient).DownloadData($self)
         $text = [Text.Encoding]::UTF8.GetString($bytes)
         & ([scriptblock]::Create($text)) -From $From -Decoded
         return

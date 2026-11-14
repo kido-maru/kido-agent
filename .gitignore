@@ -1,3 +1,2 @@
 dist/
-.site/
-.wrangler/
+__pycache__/

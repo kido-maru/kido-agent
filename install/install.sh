@@ -1,10 +1,10 @@
 #!/bin/sh
 # 起動丸エージェントを Mac・Linux に入れる(入れ直し・更新にも使える)。
 #
-#   curl -fsSL https://pc.kido.page/install.sh | sh
+#   curl -fsSL https://github.com/kido-maru/kido-agent/releases/latest/download/install.sh | sh
 #
 # 版を決めて入れるとき(既定は最新のリリース):
-#   curl -fsSL https://pc.kido.page/install.sh | KIDO_AGENT_VERSION=v0.2.1 sh
+#   curl -fsSL https://github.com/kido-maru/kido-agent/releases/download/v0.2.2/install.sh | KIDO_AGENT_VERSION=v0.2.2 sh
 #
 # 手元の tar.gz(またはそれを展開したフォルダ)から入れるとき(リリース前の確かめなど):
 #   KIDO_AGENT_TARBALL=/path/kido-agent-darwin-arm64.tar.gz sh install/install.sh

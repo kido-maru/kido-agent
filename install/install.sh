@@ -54,9 +54,9 @@ fetch() {
 	src="${KIDO_AGENT_TARBALL:-}"
 	if [ -z "$src" ]; then
 		url="$(release_url)/kido-agent-$os-$arch.tar.gz"
-		say "ダウンロードしています: $url"
+		say "ダウンロードしています..."
 		curl -fsSL "$url" -o "$work/pkg.tar.gz" ||
-			die "ダウンロードできませんでした"
+			die "ダウンロードできませんでした: $url"
 		src="$work/pkg.tar.gz"
 	fi
 	mkdir "$work/pkg"

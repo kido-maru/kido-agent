@@ -52,10 +52,10 @@ function Get-Package([string]$Work) {
         $base = if ($ver) { "https://github.com/kido-maru/kido-agent/releases/download/$ver" }
                 else { 'https://github.com/kido-maru/kido-agent/releases/latest/download' }
         $url = "$base/kido-agent-windows-$(Get-Arch).zip"
-        Write-Host "ダウンロードしています: $url"
+        Write-Host "ダウンロードしています..."
         $src = Join-Path $Work 'kido-agent.zip'
         try { Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $src }
-        catch { throw "ダウンロードできませんでした($($_.Exception.Message))" }
+        catch { throw "ダウンロードできませんでした: $url($($_.Exception.Message))" }
     }
     if (-not (Test-Path -LiteralPath $src -PathType Container)) {
         $out = Join-Path $Work 'unzipped'

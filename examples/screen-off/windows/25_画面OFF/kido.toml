@@ -1,0 +1,5 @@
+name = "画面OFF"
+# アイコン: https://lucide.dev/icons から選んで、名前を書いてください
+icon = "monitor-off"
+# 画面を消すのは、ログインして使っているときだけ意味があるので、ログインしていないときは押せないようにする
+require_login = true

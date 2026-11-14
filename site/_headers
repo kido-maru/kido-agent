@@ -1,8 +1,0 @@
-# irm | iex と curl | sh で読むので、文字コードを添えてテキストとして返す。
-# 無いと PowerShell 5.1 が UTF-8 と気づかず、日本語が化ける
-/install.ps1
-  Content-Type: text/plain; charset=utf-8
-  Cache-Control: no-cache
-/install.sh
-  Content-Type: text/plain; charset=utf-8
-  Cache-Control: no-cache

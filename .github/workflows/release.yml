@@ -23,5 +23,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes \
-            dist/*.zip dist/*.tar.gz dist/SHA256SUMS
-      # 配る物は GitHub Releases が置き場。案内のページ(入れ方のスクリプト)はこのリリースでは出さない
+            dist/*.zip dist/*.tar.gz dist/SHA256SUMS install/install.ps1 install/install.sh
+      # 入れ方のスクリプトも同じリリースに付ける。latest/download/install.ps1 で最新の版が取れ、
+      # 版を決めたいときは download/<版>/install.ps1 で、その版のスクリプトと配る物がそろう

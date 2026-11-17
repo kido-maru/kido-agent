@@ -8,7 +8,7 @@ import (
 )
 
 // Watch は止まらずに見続ける。go で呼ぶ。
-func Watch() { loop(darwinProbe{}, time.Second) }
+func Watch() { loop(darwinProbe{}, 500*time.Millisecond) }
 
 type darwinProbe struct{}
 

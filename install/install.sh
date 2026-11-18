@@ -124,6 +124,16 @@ EOF
 	systemctl --user enable --now kido-agent.service
 }
 
+# mac_firewall_on は Mac のファイアウォールが有効か。読めないときは有効とみなす
+# (案内が余分に出るだけで、出し損ねて組めないよりよい)。
+mac_firewall_on() {
+	fw=/usr/libexec/ApplicationFirewall/socketfilterfw
+	[ -x "$fw" ] || return 0
+	state=$("$fw" --getglobalstate 2>/dev/null) || return 0
+	case "$state" in *disabled*) return 1 ;; esac
+	return 0
+}
+
 # sudoers_darwin は shutdown だけをパスワードなしで許す。これが無いと、
 # 再起動・シャットダウンを「保存しますか」と聞くアプリに止められてしまう。
 sudoers_darwin() {
@@ -134,12 +144,11 @@ sudoers_darwin() {
 		return 0
 	fi
 	say ""
-	say "再起動・シャットダウンを確実に行うため、shutdown だけをパスワードなしで使えるようにします。"
-	say "Mac のログインパスワードを 1 回だけ聞きます(スキップするには n)。"
-	printf '入れますか? [Y/n] '
+	# 説明を重ねると怖いことをするように読めるので、聞くことを 1 行にする
+	printf '再起動・シャットダウンのボタンも使いますか?(Mac のパスワードを聞きます)[Y/n] '
 	read -r ans </dev/tty || ans=n
 	case "$ans" in [nN]*)
-		say "! スキップしました。再起動・シャットダウンがアプリに止められることがあります"
+		say "飛ばしました。再起動・シャットダウンのボタンは、保存の確認を出すアプリがあると止まります。"
 		return 0 ;;
 	esac
 	printf '%s ALL=(root) NOPASSWD: /sbin/shutdown\n' "$(id -un)" >"$work/sudoers"
@@ -147,7 +156,7 @@ sudoers_darwin() {
 		sudo install -m 0440 -o root -g wheel "$work/sudoers" "$f" </dev/tty; then
 		say "✓ 入れました"
 	else
-		say "! 入れられませんでした。再起動・シャットダウンがアプリに止められることがあります"
+		say "! 入れられませんでした。再起動・シャットダウンのボタンは、保存の確認を出すアプリがあると止まります。"
 	fi
 }
 
@@ -189,7 +198,10 @@ main() {
 	stop_manual
 	place
 	say "入れました($("$BIN" --version)): $BIN"
-	[ "$os" = darwin ] && say "「受け入れる接続を許可しますか」と聞かれたら「許可」を押してください。"
+	# ファイアウォールが切れている Mac では確認が出ないので、出るときだけ案内する
+	if [ "$os" = darwin ] && mac_firewall_on; then
+		say "「受け入れる接続を許可しますか」と聞かれたら「許可」を押してください。"
+	fi
 	"autostart_$os"
 	wait_agent || die "常駐アプリが起動しませんでした。ログ: $HOME/.kido-agent/kido-agent.log"
 	[ "$os" = darwin ] && sudoers_darwin

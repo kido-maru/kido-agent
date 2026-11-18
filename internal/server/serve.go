@@ -17,6 +17,7 @@ import (
 	"kido-agent/internal/defaults"
 	"kido-agent/internal/logfile"
 	"kido-agent/internal/paths"
+	"kido-agent/internal/wakescreen"
 )
 
 // Serve は常駐する。止める要求かシグナルが来るまで戻らない。
@@ -114,6 +115,9 @@ func runListener(a *agent, ctl net.Listener) int {
 	}
 	go newServer(a.controlHandler()).Serve(ctl)
 	go newServer(a.apiHandler()).Serve(api)
+	// Mac はネットワーク越しに起こされても画面が点かないので、待ち受け役が点ける。
+	// 待ち受け役は 1 つだけなので、2 つのプロセスが同時に点けに行くことはない
+	go wakescreen.Watch()
 	log.Printf("待ち受けています(%s)", paths.APIAddr)
 
 	sig := make(chan os.Signal, 1)
